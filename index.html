@@ -2808,45 +2808,95 @@ function inferirTipo(descricao, valor) {
 // ── PARSERS POR BANCO ──
 
 function parseBB(linhas) {
-  // BB: cabeçalho variável, dados começam após linha com "Data"
-  // Formato: Data;Histórico;Docto;Crédito(R$);Débito(R$);Saldo(R$)
+  // BB formato atual: "Data","Lançamento","Detalhes","N° documento","Valor","Tipo Lançamento"
+  // Valor vem como "3.060,17 C" ou "-21.310,76 D"
+  // Separador: vírgula. Strings entre aspas duplas.
   var itens = [];
   var headerIdx = -1;
+
   for (var i = 0; i < Math.min(linhas.length, 20); i++) {
-    var l = linhas[i].toLowerCase();
-    if ((l.indexOf('data') > -1 && l.indexOf('hist') > -1) ||
-        (l.indexOf('data') > -1 && l.indexOf('cr') > -1)) {
+    var l = linhas[i].toLowerCase().replace(/"/g,'');
+    if (l.indexOf('data') > -1 && (l.indexOf('lançamento') > -1 || l.indexOf('lancamento') > -1 || l.indexOf('histórico') > -1 || l.indexOf('historico') > -1)) {
       headerIdx = i; break;
     }
   }
   if (headerIdx === -1) return null;
-  var headers = linhas[headerIdx].split(';').map(function(h){ return h.trim().toLowerCase().replace(/['"]/g,''); });
-  var iData   = headers.findIndex(function(h){ return h.indexOf('data') > -1; });
-  var iDesc   = headers.findIndex(function(h){ return h.indexOf('hist') > -1 || h.indexOf('descr') > -1; });
-  var iCred   = headers.findIndex(function(h){ return h.indexOf('cred') > -1; });
-  var iDeb    = headers.findIndex(function(h){ return h.indexOf('deb') > -1; });
-  var iValor  = headers.findIndex(function(h){ return h === 'valor' || h === 'valor(r$)'; });
+
+  // Detectar separador: vírgula ou ponto-e-vírgula
+  var sep = linhas[headerIdx].indexOf(';') > -1 ? ';' : ',';
+
+  // Parsear CSV respeitando aspas (campos podem conter vírgulas)
+  function parseCsvLine(linha) {
+    var result = [], cur = '', inQ = false;
+    for (var k = 0; k < linha.length; k++) {
+      var c = linha[k];
+      if (c === '"') { inQ = !inQ; }
+      else if (c === sep && !inQ) { result.push(cur.trim()); cur = ''; }
+      else { cur += c; }
+    }
+    result.push(cur.trim());
+    return result;
+  }
+
+  var headers = parseCsvLine(linhas[headerIdx]).map(function(h){ return h.toLowerCase().replace(/['"]/g,'').trim(); });
+  var iData  = headers.findIndex(function(h){ return h === 'data' || h.indexOf('data') === 0; });
+  var iLanc  = headers.findIndex(function(h){ return h.indexOf('lançamento') > -1 || h.indexOf('lancamento') > -1 || h.indexOf('histórico') > -1 || h.indexOf('historico') > -1; });
+  var iDet   = headers.findIndex(function(h){ return h.indexOf('detalhe') > -1 || h.indexOf('descr') > -1; });
+  var iValor = headers.findIndex(function(h){ return h === 'valor' || h.indexOf('valor') > -1; });
+  var iTipo  = headers.findIndex(function(h){ return h.indexOf('tipo') > -1; });
+
+  // Linhas a ignorar (saldo, totais)
+  var IGNORAR = ['saldo anterior', 'saldo do dia', 's a l d o', 'saldo', 'total'];
 
   for (var i = headerIdx + 1; i < linhas.length; i++) {
-    var cols = linhas[i].split(';').map(function(c){ return c.trim().replace(/^"|"$/g,''); });
-    if (cols.length < 3 || !cols[0]) continue;
+    var linha = linhas[i];
+    if (!linha || !linha.trim()) continue;
+
+    var cols = parseCsvLine(linha);
+    if (cols.length < 3) continue;
+
     var data = parsarData(cols[iData > -1 ? iData : 0]);
     if (!data) continue;
-    var desc = cols[iDesc > -1 ? iDesc : 1] || '';
 
-    var valor = 0, tipo = 'saida';
-    if (iCred > -1 && iDeb > -1) {
-      var cred = parseValorBR(cols[iCred]);
-      var deb  = parseValorBR(cols[iDeb]);
-      if (cred > 0) { valor = cred; tipo = 'entrada'; }
-      else if (deb > 0) { valor = deb; tipo = 'saida'; }
-    } else if (iValor > -1) {
-      valor = parseValorBR(cols[iValor]);
-      tipo  = valor >= 0 ? 'entrada' : 'saida';
-      valor = Math.abs(valor);
-    }
+    var lancamento = (cols[iLanc > -1 ? iLanc : 1] || '').trim();
+    var detalhe    = (cols[iDet  > -1 ? iDet  : 2] || '').trim();
+    var desc = lancamento + (detalhe ? ' — ' + detalhe : '');
+
+    // Ignorar linhas de saldo
+    var descLow = desc.toLowerCase();
+    if (IGNORAR.some(function(ig){ return descLow.indexOf(ig) > -1; })) continue;
+
+    // Valor: "3.060,17 C" ou "-21.310,76 D"
+    var valorStr = (cols[iValor > -1 ? iValor : 4] || '').trim();
+    var tipoStr  = (cols[iTipo  > -1 ? iTipo  : 5] || '').trim().toLowerCase();
+
+    // Remover sufixo C/D e sinal
+    var sufixo = '';
+    var matchSuf = valorStr.match(/([CDcd])\s*$/);
+    if (matchSuf) { sufixo = matchSuf[1].toUpperCase(); valorStr = valorStr.replace(/[CDcd]\s*$/, '').trim(); }
+
+    // Converter valor BR: remover pontos de milhar, trocar vírgula por ponto
+    valorStr = valorStr.replace(/[R$\s]/g,'').replace(/\./g,'').replace(',','.');
+    var valor = Math.abs(parseFloat(valorStr) || 0);
     if (valor <= 0) continue;
-    itens.push({ data:data, desc:desc, valor:valor, tipo:tipo, cat:sugerirCategoria(desc+' '+tipo), status:'pendente', banco:'Banco do Brasil' });
+
+    // Determinar tipo
+    var tipo = 'saida';
+    if (tipoStr === 'entrada' || sufixo === 'C') tipo = 'entrada';
+    else if (tipoStr === 'saída' || tipoStr === 'saida' || sufixo === 'D') tipo = 'saida';
+
+    // Sugerir categoria usando lançamento + detalhes
+    var catHint = tipo === 'entrada' ? 'receita' : sugerirCategoria(desc);
+
+    itens.push({
+      data:   data,
+      desc:   desc,
+      valor:  valor,
+      tipo:   tipo,
+      cat:    catHint,
+      status: 'pendente',
+      banco:  'Banco do Brasil'
+    });
   }
   return itens.length ? itens : null;
 }
