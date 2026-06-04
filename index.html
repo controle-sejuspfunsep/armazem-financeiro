@@ -2489,7 +2489,7 @@ function renderCartoes() {
     } catch(e){}
     var diaSem = dObj ? ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][dObj.getDay()] : '';
 
-    html += '<tr onclick="mostrarTransacoesDia(''+data+'')" style="cursor:pointer" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background=''">'+
+    html += '<tr onclick="mostrarTransacoesDia(\'' + data + '\'  )" style="cursor:pointer" onmouseover="this.style.background=\'var(--s2)\'" onmouseout="this.style.background=\'\'">'+
       '<td style="padding:9px 14px;font-size:13px;border-bottom:1px solid var(--b1);white-space:nowrap;font-weight:500">'+
         dataExib+' <span style="font-size:10px;color:var(--mu)">'+diaSem+'</span>'+
       '</td>'+
@@ -2585,8 +2585,7 @@ function exportarConciliacao() {
   });
   var datas = Object.keys(por_dia).sort();
   var bCols = bandeiras.map(function(b){ return b+' Bruto;'+b+' Líquido'; }).join(';');
-  var csv = '﻿Data;Transações;'+bCols+';Total Bruto;Total Taxas;Total Líquido
-';
+  var csv = '\ufeffData;Transações;'+bCols+';Total Bruto;Total Taxas;Total Líquido\n';
   datas.forEach(function(d){
     var dia = por_dia[d];
     var row = d+';'+dia.ct+';';
@@ -2595,8 +2594,7 @@ function exportarConciliacao() {
       return bd ? bd.bruto.toFixed(2)+';'+bd.liquido.toFixed(2) : '0;0';
     }).join(';');
     row += ';'+dia.bruto.toFixed(2)+';'+dia.taxas.toFixed(2)+';'+dia.liquido.toFixed(2);
-    csv += row+'
-';
+    csv += row+'\n';
   });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
