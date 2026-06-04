@@ -562,35 +562,55 @@ tbody td{padding:9px 14px;font-size:13px;vertical-align:middle}
 <!-- ═══ CONTROLE DE CARTÕES ═══ -->
 <div id="mod-cartoes" style="display:none">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
-    <div><h2 style="font-family:Syne,sans-serif;font-size:18px;font-weight:600">Controle de Cartões</h2><p style="font-size:12px;color:var(--mu);margin-top:2px">Importe o CSV da operadora e calcule o valor líquido após taxas</p></div>
-    <div style="display:flex;gap:8px">
+    <div><h2 style="font-family:Syne,sans-serif;font-size:18px;font-weight:600">Controle de Cartões</h2><p style="font-size:12px;color:var(--mu);margin-top:2px">Conciliação diária por bandeira — valor bruto e líquido após taxas</p></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn btn-ghost" onclick="document.getElementById('csv-cartao-input').click()"><i class="ti ti-upload"></i>Importar CSV</button>
+      <button class="btn btn-ghost" id="btn-toggle-transacoes" onclick="toggleTabelaCartoes()" style="display:none"><i class="ti ti-list"></i>Ver transações detalhadas</button>
       <button class="btn btn-primary" onclick="abrirModalTaxas()"><i class="ti ti-settings"></i>Configurar taxas</button>
     </div>
     <input type="file" id="csv-cartao-input" accept=".csv" style="display:none" onchange="importarCSVCartao(this)">
   </div>
 
   <!-- Alerta instrução -->
-  <div class="alerta al-info" style="margin-bottom:16px">
+  <div class="alerta al-info" id="cartao-instrucao" style="margin-bottom:16px">
     <i class="ti ti-info-circle"></i>
-    <span>Importe o arquivo CSV da sua máquina de cartão ou operadora. O sistema identificará as bandeiras automaticamente e calculará o valor líquido já descontando as taxas configuradas.</span>
+    <span>Importe o CSV da Cielo ou de outra operadora. O sistema agrupa por dia e bandeira para facilitar a conciliação bancária.</span>
   </div>
 
-  <!-- Cards por bandeira -->
-  <div id="cartao-bandeiras-cards" style="margin-bottom:18px"></div>
+  <!-- Totalizador Cielo -->
+  <div id="cielo-totalizador-info"></div>
 
-  <!-- Resumo geral -->
-  <div class="cgrid" style="margin-bottom:18px" id="cartao-resumo-cards">
+  <!-- Cards resumo geral -->
+  <div class="cgrid" style="margin-bottom:14px" id="cartao-resumo-cards">
     <div class="card"><div class="card-bar cb-gr"></div><div class="card-top"><i class="ti ti-credit-card"></i>Total bruto</div><div class="card-val vgr" id="cart-bruto">R$ 0</div><div class="card-sub">Valor das vendas</div></div>
     <div class="card"><div class="card-bar cb-rd"></div><div class="card-top"><i class="ti ti-percentage"></i>Total taxas</div><div class="card-val vrd" id="cart-taxas">R$ 0</div><div class="card-sub">Descontado pela operadora</div></div>
     <div class="card"><div class="card-bar cb-ac"></div><div class="card-top"><i class="ti ti-coin"></i>Valor líquido</div><div class="card-val vac" id="cart-liquido">R$ 0</div><div class="card-sub">O que você receberá</div></div>
     <div class="card"><div class="card-bar cb-am"></div><div class="card-top"><i class="ti ti-calculator"></i>Taxa média</div><div class="card-val vam" id="cart-taxa-media">0%</div><div class="card-sub">Ponderada por bandeira</div></div>
   </div>
 
-  <!-- Tabela detalhada -->
-  <div class="tw" id="cartao-tabela-wrap" style="display:none">
+  <!-- Cards por bandeira -->
+  <div id="cartao-bandeiras-cards" style="margin-bottom:14px"></div>
+
+  <!-- CONCILIAÇÃO DIÁRIA -->
+  <div id="cartao-conciliacao-wrap" style="display:none">
+    <div class="sec">
+      <div class="sec-h">
+        <div><div class="sec-t"><i class="ti ti-calendar-check" style="margin-right:6px"></i>Conciliação Diária por Bandeira</div>
+        <div class="sec-s">Clique em um dia para ver as transações detalhadas</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="exportarConciliacao()"><i class="ti ti-download"></i>Exportar</button>
+      </div>
+      <div id="tb-conciliacao-diaria"></div>
+    </div>
+  </div>
+
+  <!-- Tabela transações detalhadas (expansível) -->
+  <div class="tw" id="cartao-tabela-wrap" style="display:none;margin-top:14px">
+    <div style="padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:12px;font-weight:600;color:var(--mu)" id="cartao-tabela-titulo">Todas as transações</span>
+      <button class="btn btn-ghost btn-sm" onclick="toggleTabelaCartoes()"><i class="ti ti-x"></i>Fechar</button>
+    </div>
     <table>
-      <thead><tr><th>Data</th><th>Bandeira</th><th>Modalidade</th><th>NSU/Autorização</th><th style="text-align:right">Bruto</th><th style="text-align:right">Taxa</th><th style="text-align:right">Líquido</th></tr></thead>
+      <thead><tr><th>Data/Hora</th><th>Bandeira</th><th>Modalidade</th><th>NSU/Autorização</th><th style="text-align:right">Bruto</th><th style="text-align:right">Taxa %</th><th style="text-align:right">Líquido</th></tr></thead>
       <tbody id="tb-cartoes"></tbody>
     </table>
   </div>
@@ -2273,10 +2293,23 @@ function processarCSVCartao(text) {
   // Guardar totalizador Cielo para exibir
   window._cieloTotalizador = totalizadorCielo;
 
+  var btnTog = document.getElementById('btn-toggle-transacoes');
+  if (btnTog) btnTog.innerHTML = '<i class="ti ti-list"></i> Ver transações (' + TRANSACOES_CARTAO.length + ')';
   var msg = TRANSACOES_CARTAO.length + ' transações importadas';
   if (ignorados) msg += ' (' + ignorados + ' não aprovadas ignoradas)';
   toast(msg + '!', true);
   renderCartoes();
+}
+
+function toggleTabelaCartoes() {
+  var wrap = document.getElementById('cartao-tabela-wrap');
+  var btn = document.getElementById('btn-toggle-transacoes');
+  if (!wrap) return;
+  var visible = wrap.style.display === 'block';
+  wrap.style.display = visible ? 'none' : 'block';
+  if (btn) btn.innerHTML = visible
+    ? '<i class="ti ti-list"></i> Ver transações (' + TRANSACOES_CARTAO.length + ')'
+    : '<i class="ti ti-list-check"></i> Ocultar transações';
 }
 
 function identificarModalidadeCielo(forma, parcelado) {
@@ -2297,87 +2330,279 @@ var MOD_LABELS = { debito:'Débito', cred1:'Crédito 1x', cred2_6:'Crédito 2-6x
 var BANDEIRA_COLORS = { Visa:'#1a1f71', Mastercard:'#eb001b', Elo:'#ffcb00', Hipercard:'#822124', Amex:'#2e77bc', Cabal:'#00a651', Outros:'#6b7394' };
 
 function renderCartoes() {
-  var vazio = document.getElementById('cartao-vazio');
+  var vazio      = document.getElementById('cartao-vazio');
   var tabelaWrap = document.getElementById('cartao-tabela-wrap');
+  var concWrap   = document.getElementById('cartao-conciliacao-wrap');
+  var instrucao  = document.getElementById('cartao-instrucao');
 
   if (!TRANSACOES_CARTAO.length) {
-    if (vazio) vazio.style.display='block';
-    if (tabelaWrap) tabelaWrap.style.display='none';
-    setText('cart-bruto','R$ 0'); setText('cart-taxas','R$ 0'); setText('cart-liquido','R$ 0'); setText('cart-taxa-media','0%');
+    if (vazio)      vazio.style.display      = 'block';
+    if (tabelaWrap) tabelaWrap.style.display = 'none';
+    if (concWrap)   concWrap.style.display   = 'none';
+    if (instrucao)  instrucao.style.display  = 'flex';
+    setText('cart-bruto','R$ 0'); setText('cart-taxas','R$ 0');
+    setText('cart-liquido','R$ 0'); setText('cart-taxa-media','0%');
     var bc = document.getElementById('cartao-bandeiras-cards');
-    if (bc) bc.innerHTML='';
+    if (bc) bc.innerHTML = '';
+    var ci = document.getElementById('cielo-totalizador-info');
+    if (ci) ci.innerHTML = '';
     window._cieloTotalizador = null;
     return;
   }
-  if (vazio) vazio.style.display='none';
-  if (tabelaWrap) tabelaWrap.style.display='block';
 
+  if (vazio)      vazio.style.display      = 'none';
+  if (concWrap)   concWrap.style.display   = 'block';
+  if (instrucao)  instrucao.style.display  = 'none';
+  if (tabelaWrap) tabelaWrap.style.display = 'none';
+
+  var btnToggle = document.getElementById('btn-toggle-transacoes');
+  if (btnToggle) {
+    btnToggle.style.display = 'inline-flex';
+    btnToggle.innerHTML = '<i class="ti ti-list"></i> Ver transações ('+TRANSACOES_CARTAO.length+')';
+  }
+
+  // ── Totais gerais ──
   var totalBruto=0, totalTaxas=0, totalLiq=0;
-  TRANSACOES_CARTAO.forEach(function(t){ totalBruto+=t.bruto; totalTaxas+=(t.bruto-t.liquido); totalLiq+=t.liquido; });
-  var taxaMedia = totalBruto>0 ? (totalTaxas/totalBruto*100) : 0;
+  TRANSACOES_CARTAO.forEach(function(t){
+    totalBruto += t.bruto;
+    totalTaxas += (t.bruto - t.liquido);
+    totalLiq   += t.liquido;
+  });
+  var taxaMedia = totalBruto > 0 ? (totalTaxas / totalBruto * 100) : 0;
 
-  setText('cart-bruto', R(totalBruto));
-  setText('cart-taxas', R(totalTaxas));
-  setText('cart-liquido', R(totalLiq));
+  setText('cart-bruto',      R(totalBruto));
+  setText('cart-taxas',      R(totalTaxas));
+  setText('cart-liquido',    R(totalLiq));
   setText('cart-taxa-media', taxaMedia.toFixed(2)+'%');
 
-  // Aviso totalizador Cielo (se disponível)
+  // ── Totalizador Cielo ──
   var cieloInfo = document.getElementById('cielo-totalizador-info');
-  if (!cieloInfo) {
-    cieloInfo = document.createElement('div');
-    cieloInfo.id = 'cielo-totalizador-info';
-    var resumoCards = document.getElementById('cartao-resumo-cards');
-    if (resumoCards && resumoCards.parentNode) resumoCards.parentNode.insertBefore(cieloInfo, resumoCards.nextSibling);
+  if (cieloInfo) {
+    if (window._cieloTotalizador) {
+      var ct   = window._cieloTotalizador;
+      var diff = Math.abs(totalBruto - ct.bruto);
+      cieloInfo.innerHTML =
+        '<div class="alerta '+(diff<1?'al-ok':'al-warn')+'" style="margin-bottom:14px">'+
+        '<i class="ti ti-'+(diff<1?'circle-check':'alert-circle')+'"></i>'+
+        '<div><strong>Totalizador oficial Cielo:</strong> '+
+        ct.qtd+' vendas · Bruto: '+R(ct.bruto)+' · Taxas: '+R(Math.abs(ct.taxa))+' · Líquido: '+R(ct.liquido)+
+        (diff<1
+          ? ' &nbsp;<span style="font-size:11px;color:var(--gr)">✓ Valores conferem</span>'
+          : ' &nbsp;<span style="font-size:11px;color:var(--am)">⚠ Diferença de '+R(diff)+'</span>')+
+        '</div></div>';
+    } else { cieloInfo.innerHTML = ''; }
   }
-  if (window._cieloTotalizador) {
-    var ct = window._cieloTotalizador;
-    var diff = Math.abs(totalBruto - ct.bruto);
-    cieloInfo.innerHTML = '<div class="alerta al-ok" style="margin-bottom:14px"><i class="ti ti-circle-check"></i><div><strong>Totalizador oficial Cielo:</strong> ' +
-      ct.qtd + ' vendas · Bruto: ' + R(ct.bruto) + ' · Taxas: ' + R(Math.abs(ct.taxa)) + ' · Líquido: ' + R(ct.liquido) +
-      (diff < 1 ? ' <span style="margin-left:8px;font-size:11px">✓ Valores conferem</span>' : ' <span style="margin-left:8px;font-size:11px;color:var(--am)">⚠ Diferença: '+R(diff)+'</span>') +
-      '</div></div>';
-  } else { cieloInfo.innerHTML = ''; }
 
-  // Cards por bandeira
+  // ── Cards por bandeira (totais do período) ──
   var por_bandeira = {};
   TRANSACOES_CARTAO.forEach(function(t){
     if (!por_bandeira[t.bandeira]) por_bandeira[t.bandeira]={bruto:0,liquido:0,taxas:0,ct:0};
-    por_bandeira[t.bandeira].bruto+=t.bruto;
-    por_bandeira[t.bandeira].liquido+=t.liquido;
-    por_bandeira[t.bandeira].taxas+=(t.bruto-t.liquido);
+    por_bandeira[t.bandeira].bruto   += t.bruto;
+    por_bandeira[t.bandeira].liquido += t.liquido;
+    por_bandeira[t.bandeira].taxas   += (t.bruto - t.liquido);
     por_bandeira[t.bandeira].ct++;
   });
   var bc = document.getElementById('cartao-bandeiras-cards');
   if (bc) {
-    bc.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:4px">'+
+    bc.innerHTML =
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:4px">'+
       Object.keys(por_bandeira).map(function(b){
-        var d = por_bandeira[b];
-        var cor = BANDEIRA_COLORS[b]||'#6b7394';
+        var d   = por_bandeira[b];
+        var cor = BANDEIRA_COLORS[b] || '#6b7394';
+        var txPct = d.bruto > 0 ? (d.taxas/d.bruto*100).toFixed(2) : '0.00';
         return '<div class="card" style="border-top:3px solid '+cor+'">'+
           '<div class="card-top" style="color:'+cor+'"><i class="ti ti-credit-card"></i>'+b+'</div>'+
           '<div class="card-val" style="color:'+cor+'">'+R(d.liquido)+'</div>'+
-          '<div class="card-sub">Bruto: '+R(d.bruto)+' · Taxa: '+R(d.taxas)+'</div>'+
-          '<div style="font-size:10px;color:var(--mu);margin-top:4px">'+d.ct+' transação'+(d.ct!==1?'ões':'')+'</div>'+
+          '<div class="card-sub">Bruto: '+R(d.bruto)+'</div>'+
+          '<div class="card-sub">Taxas: '+R(d.taxas)+' ('+txPct+'%)</div>'+
+          '<div style="font-size:10px;color:var(--mu);margin-top:4px">'+d.ct+' transaç'+(d.ct!==1?'ões':'ão')+'</div>'+
         '</div>';
       }).join('')+
-    '</div>';
+      '</div>';
   }
 
-  // Tabela
+  // ── CONCILIAÇÃO DIÁRIA ──
+  // Agrupar por data → bandeira
+  var por_dia = {};
+  TRANSACOES_CARTAO.forEach(function(t){
+    var d = t.data || 'sem data';
+    if (!por_dia[d]) por_dia[d] = { bandeiras:{}, bruto:0, taxas:0, liquido:0, ct:0 };
+    if (!por_dia[d].bandeiras[t.bandeira]) por_dia[d].bandeiras[t.bandeira] = {bruto:0,taxas:0,liquido:0,ct:0};
+    por_dia[d].bandeiras[t.bandeira].bruto   += t.bruto;
+    por_dia[d].bandeiras[t.bandeira].taxas   += (t.bruto - t.liquido);
+    por_dia[d].bandeiras[t.bandeira].liquido += t.liquido;
+    por_dia[d].bandeiras[t.bandeira].ct++;
+    por_dia[d].bruto   += t.bruto;
+    por_dia[d].taxas   += (t.bruto - t.liquido);
+    por_dia[d].liquido += t.liquido;
+    por_dia[d].ct++;
+  });
+
+  var datas = Object.keys(por_dia).sort();
+  var bandeiras = Object.keys(por_bandeira);
+
+  // Montar tabela de conciliação
+  var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">';
+
+  // Cabeçalho com bandeiras
+  html += '<thead><tr>'+
+    '<th style="background:var(--s2);padding:9px 14px;text-align:left;font-size:10px;font-weight:600;color:var(--su);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--b1);white-space:nowrap">Data</th>'+
+    '<th style="background:var(--s2);padding:9px 14px;text-align:center;font-size:10px;font-weight:600;color:var(--su);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--b1)">Transações</th>';
+
+  bandeiras.forEach(function(b){
+    var cor = BANDEIRA_COLORS[b] || '#6b7394';
+    html += '<th colspan="2" style="background:var(--s2);padding:9px 14px;text-align:center;font-size:10px;font-weight:600;color:'+cor+';text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--b1);border-left:2px solid '+cor+'33;white-space:nowrap">'+b+'</th>';
+  });
+  html += '<th colspan="2" style="background:var(--s3);padding:9px 14px;text-align:center;font-size:10px;font-weight:700;color:var(--tx);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--b1);border-left:2px solid var(--b2)">TOTAL DIA</th>';
+  html += '</tr>';
+
+  // Sub-cabeçalho Bruto / Líquido
+  html += '<tr>'+
+    '<th style="background:var(--s2);padding:5px 14px;border-bottom:1px solid var(--b1)"></th>'+
+    '<th style="background:var(--s2);padding:5px 14px;border-bottom:1px solid var(--b1)"></th>';
+  bandeiras.forEach(function(b){
+    var cor = BANDEIRA_COLORS[b] || '#6b7394';
+    html += '<th style="background:var(--s2);padding:5px 8px;text-align:right;font-size:10px;color:var(--mu);border-bottom:1px solid var(--b1);border-left:2px solid '+cor+'33">Bruto</th>'+
+            '<th style="background:var(--s2);padding:5px 8px;text-align:right;font-size:10px;color:var(--gr);border-bottom:1px solid var(--b1)">Líquido</th>';
+  });
+  html += '<th style="background:var(--s3);padding:5px 8px;text-align:right;font-size:10px;color:var(--mu);border-bottom:1px solid var(--b1);border-left:2px solid var(--b2)">Bruto</th>'+
+          '<th style="background:var(--s3);padding:5px 8px;text-align:right;font-size:10px;color:var(--gr);border-bottom:1px solid var(--b1)">Líquido</th>';
+  html += '</tr></thead><tbody>';
+
+  // Linhas por dia
+  datas.forEach(function(data){
+    var dia = por_dia[data];
+    // Converter data DD/MM/YYYY para exibição
+    var dataExib = data;
+    if (data.match(/^\d{2}\/\d{2}\/\d{4}$/)) dataExib = data;
+    else if (data.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      var p = data.split('-');
+      dataExib = p[2]+'/'+p[1]+'/'+p[0];
+    }
+    // Dia da semana
+    var dObj = null;
+    try {
+      if (data.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+        var pp = data.split('/');
+        dObj = new Date(pp[2]+'-'+pp[1]+'-'+pp[0]+'T12:00:00');
+      } else { dObj = new Date(data+'T12:00:00'); }
+    } catch(e){}
+    var diaSem = dObj ? ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][dObj.getDay()] : '';
+
+    html += '<tr onclick="mostrarTransacoesDia(''+data+'')" style="cursor:pointer" onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background=''">'+
+      '<td style="padding:9px 14px;font-size:13px;border-bottom:1px solid var(--b1);white-space:nowrap;font-weight:500">'+
+        dataExib+' <span style="font-size:10px;color:var(--mu)">'+diaSem+'</span>'+
+      '</td>'+
+      '<td style="padding:9px 14px;text-align:center;font-size:12px;color:var(--mu);border-bottom:1px solid var(--b1)">'+dia.ct+'</td>';
+
+    bandeiras.forEach(function(b){
+      var cor = BANDEIRA_COLORS[b] || '#6b7394';
+      var bd = dia.bandeiras[b];
+      if (bd) {
+        html += '<td style="padding:9px 8px;text-align:right;font-size:12px;border-bottom:1px solid var(--b1);border-left:2px solid '+cor+'22">'+R(bd.bruto)+'</td>'+
+                '<td style="padding:9px 8px;text-align:right;font-size:12px;color:var(--gr);font-weight:500;border-bottom:1px solid var(--b1)">'+R(bd.liquido)+'</td>';
+      } else {
+        html += '<td style="padding:9px 8px;text-align:center;font-size:11px;color:var(--su);border-bottom:1px solid var(--b1);border-left:2px solid '+cor+'22">—</td>'+
+                '<td style="padding:9px 8px;text-align:center;font-size:11px;color:var(--su);border-bottom:1px solid var(--b1)">—</td>';
+      }
+    });
+
+    html += '<td style="padding:9px 8px;text-align:right;font-size:13px;font-weight:600;border-bottom:1px solid var(--b1);background:var(--s2);border-left:2px solid var(--b2)">'+R(dia.bruto)+'</td>'+
+            '<td style="padding:9px 8px;text-align:right;font-size:13px;font-weight:700;color:var(--gr);border-bottom:1px solid var(--b1);background:var(--s2)">'+R(dia.liquido)+'</td>';
+    html += '</tr>';
+  });
+
+  // Linha de totais
+  html += '<tr style="background:var(--s3)">'+
+    '<td style="padding:10px 14px;font-family:Syne,sans-serif;font-size:13px;font-weight:700;border-top:2px solid var(--b2)">TOTAL PERÍODO</td>'+
+    '<td style="padding:10px 14px;text-align:center;font-size:12px;font-weight:600;border-top:2px solid var(--b2)">'+TRANSACOES_CARTAO.length+'</td>';
+
+  bandeiras.forEach(function(b){
+    var cor = BANDEIRA_COLORS[b] || '#6b7394';
+    var d = por_bandeira[b];
+    html += '<td style="padding:10px 8px;text-align:right;font-size:12px;font-weight:600;border-top:2px solid var(--b2);border-left:2px solid '+cor+'44">'+R(d.bruto)+'</td>'+
+            '<td style="padding:10px 8px;text-align:right;font-size:12px;font-weight:700;color:var(--gr);border-top:2px solid var(--b2)">'+R(d.liquido)+'</td>';
+  });
+
+  html += '<td style="padding:10px 8px;text-align:right;font-size:14px;font-weight:700;border-top:2px solid var(--b2);border-left:2px solid var(--b2)">'+R(totalBruto)+'</td>'+
+          '<td style="padding:10px 8px;text-align:right;font-size:14px;font-weight:700;color:var(--gr);border-top:2px solid var(--b2)">'+R(totalLiq)+'</td>';
+  html += '</tr></tbody></table></div>';
+
+  var concEl = document.getElementById('tb-conciliacao-diaria');
+  if (concEl) concEl.innerHTML = html;
+
+  // Renderizar tabela detalhada (todas as transações)
+  renderTabelaTransacoes(TRANSACOES_CARTAO, 'Todas as transações ('+TRANSACOES_CARTAO.length+')');
+}
+
+function mostrarTransacoesDia(data) {
+  var lista = TRANSACOES_CARTAO.filter(function(t){ return t.data === data; });
+  var p = data.indexOf('/') > -1 ? data : (function(){ var x=data.split('-'); return x[2]+'/'+x[1]+'/'+x[0]; })();
+  renderTabelaTransacoes(lista, 'Transações de '+p+' ('+lista.length+')');
+  var wrap = document.getElementById('cartao-tabela-wrap');
+  if (wrap) { wrap.style.display='block'; wrap.scrollIntoView({behavior:'smooth',block:'start'}); }
+  var btnToggle = document.getElementById('btn-toggle-transacoes');
+  if (btnToggle) btnToggle.innerHTML = '<i class="ti ti-list-check"></i> Ocultar transações';
+}
+
+function renderTabelaTransacoes(lista, titulo) {
   var tb = document.getElementById('tb-cartoes');
+  var tit = document.getElementById('cartao-tabela-titulo');
+  if (tit) tit.textContent = titulo || '';
   if (!tb) return;
-  tb.innerHTML = TRANSACOES_CARTAO.map(function(t){
-    var cor = BANDEIRA_COLORS[t.bandeira]||'#6b7394';
+  tb.innerHTML = lista.map(function(t){
+    var cor = BANDEIRA_COLORS[t.bandeira] || '#6b7394';
     return '<tr>'+
-      '<td style="font-size:12px;color:var(--mu)">'+t.data+(t.hora?' <span style="color:var(--su)">'+t.hora+'</span>':'')+'</td>'+
+      '<td style="font-size:12px;color:var(--mu);white-space:nowrap">'+t.data+
+        (t.hora ? ' <span style="color:var(--su)">'+t.hora+'</span>' : '')+
+      '</td>'+
       '<td><span class="pill" style="background:'+cor+'22;color:'+cor+';border:1px solid '+cor+'44">'+t.bandeira+'</span></td>'+
-      '<td><span class="pill p-mu" title="'+( t.forma||'' )+'">'+( MOD_LABELS[t.modalidade]||t.modalidade )+'</span></td>'+
+      '<td><span class="pill p-mu" title="'+(t.forma||'')+'">'+( MOD_LABELS[t.modalidade] || t.modalidade )+'</span></td>'+
       '<td style="font-size:12px;color:var(--mu)">'+t.nsu+'</td>'+
       '<td style="text-align:right;font-weight:600">'+R(t.bruto)+'</td>'+
-      '<td style="text-align:right;color:var(--rd)">'+t.taxa.toFixed(2)+'%<br><span style="font-size:10px">'+R(t.taxaValor||0)+'</span></td>'+
+      '<td style="text-align:right;color:var(--rd);white-space:nowrap">'+
+        t.taxa.toFixed(2)+'% &nbsp;<span style="font-size:11px">'+R(t.taxaValor||0)+'</span>'+
+      '</td>'+
       '<td style="text-align:right;font-weight:600;color:var(--gr)">'+R(t.liquido)+'</td>'+
     '</tr>';
   }).join('');
+}
+
+function exportarConciliacao() {
+  var por_dia = {};
+  var bandeiras = [];
+  TRANSACOES_CARTAO.forEach(function(t){
+    var d = t.data||'sem data';
+    if (!por_dia[d]) por_dia[d]={bandeiras:{},bruto:0,taxas:0,liquido:0,ct:0};
+    if (!por_dia[d].bandeiras[t.bandeira]) por_dia[d].bandeiras[t.bandeira]={bruto:0,taxas:0,liquido:0,ct:0};
+    por_dia[d].bandeiras[t.bandeira].bruto+=t.bruto;
+    por_dia[d].bandeiras[t.bandeira].taxas+=(t.bruto-t.liquido);
+    por_dia[d].bandeiras[t.bandeira].liquido+=t.liquido;
+    por_dia[d].bandeiras[t.bandeira].ct++;
+    por_dia[d].bruto+=t.bruto; por_dia[d].taxas+=(t.bruto-t.liquido);
+    por_dia[d].liquido+=t.liquido; por_dia[d].ct++;
+    if (bandeiras.indexOf(t.bandeira)===-1) bandeiras.push(t.bandeira);
+  });
+  var datas = Object.keys(por_dia).sort();
+  var bCols = bandeiras.map(function(b){ return b+' Bruto;'+b+' Líquido'; }).join(';');
+  var csv = '﻿Data;Transações;'+bCols+';Total Bruto;Total Taxas;Total Líquido
+';
+  datas.forEach(function(d){
+    var dia = por_dia[d];
+    var row = d+';'+dia.ct+';';
+    row += bandeiras.map(function(b){
+      var bd = dia.bandeiras[b];
+      return bd ? bd.bruto.toFixed(2)+';'+bd.liquido.toFixed(2) : '0;0';
+    }).join(';');
+    row += ';'+dia.bruto.toFixed(2)+';'+dia.taxas.toFixed(2)+';'+dia.liquido.toFixed(2);
+    csv += row+'
+';
+  });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+  a.download = 'conciliacao_cartoes.csv';
+  a.click();
+  toast('Conciliação exportada!', true);
 }
 
 function abrirModalTaxas() {
