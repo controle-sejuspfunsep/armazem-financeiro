@@ -242,6 +242,7 @@ tbody td{padding:9px 14px;font-size:13px;vertical-align:middle}
     <button class="nb" onclick="setMod('faturamento',this)"><i class="ti ti-calendar-stats"></i>Faturamento</button>
     <button class="nb" onclick="setMod('fornecedores',this)"><i class="ti ti-truck"></i>Fornecedores</button>
     <button class="nb" onclick="setMod('cartoes',this)"><i class="ti ti-credit-card"></i>Cartões</button>
+    <button class="nb" onclick="setMod('extrato',this)"><i class="ti ti-building-bank"></i>Extrato</button>
     <button class="nb" onclick="setMod('dre',this)"><i class="ti ti-report-money"></i>DRE</button>
     <button class="nb" onclick="setMod('fluxo',this)"><i class="ti ti-arrows-exchange"></i>Fluxo de Caixa</button>
     <button class="nb" onclick="setMod('indicadores',this)"><i class="ti ti-chart-bar"></i>Indicadores</button>
@@ -622,6 +623,125 @@ tbody td{padding:9px 14px;font-size:13px;vertical-align:middle}
   </div>
 </div>
 
+
+<!-- ═══ EXTRATO BANCÁRIO ═══ -->
+<div id="mod-extrato" style="display:none">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+    <div>
+      <h2 style="font-family:Syne,sans-serif;font-size:18px;font-weight:600">Extrato Bancário</h2>
+      <p style="font-size:12px;color:var(--mu);margin-top:2px">Importe o CSV do banco e lance entradas/saídas automaticamente</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select class="fi" id="extrato-banco-sel" style="width:160px">
+        <option value="">Selecione o banco</option>
+        <option value="bb">Banco do Brasil</option>
+        <option value="sicredi">Sicredi</option>
+        <option value="itau">Itaú</option>
+        <option value="bradesco">Bradesco</option>
+        <option value="auto">Detectar automaticamente</option>
+      </select>
+      <button class="btn btn-ghost" onclick="document.getElementById('csv-extrato-input').click()"><i class="ti ti-upload"></i>Importar extrato</button>
+      <button class="btn btn-primary" id="btn-lancar-selecionados" onclick="lancarSelecionados()" style="display:none"><i class="ti ti-check"></i>Lançar selecionados</button>
+    </div>
+    <input type="file" id="csv-extrato-input" accept=".csv,.txt,.ofx,.xlsx,.xls" style="display:none" onchange="importarExtratoCSV(this)">
+  </div>
+
+  <!-- Instrução -->
+  <div class="alerta al-info" id="extrato-instrucao" style="margin-bottom:16px">
+    <i class="ti ti-info-circle"></i>
+    <span>Selecione o banco, importe o CSV do extrato e o sistema identificará entradas e saídas automaticamente. Revise, categorize e lance no financeiro com um clique.</span>
+  </div>
+
+  <!-- Cards resumo -->
+  <div class="cgrid" style="margin-bottom:16px" id="extrato-resumo" style="display:none">
+    <div class="card"><div class="card-bar cb-gr"></div><div class="card-top"><i class="ti ti-arrow-down-circle"></i>Entradas</div><div class="card-val vgr" id="ext-entradas">R$ 0</div><div class="card-sub" id="ext-entradas-ct">0 lançamentos</div></div>
+    <div class="card"><div class="card-bar cb-rd"></div><div class="card-top"><i class="ti ti-arrow-up-circle"></i>Saídas</div><div class="card-val vrd" id="ext-saidas">R$ 0</div><div class="card-sub" id="ext-saidas-ct">0 lançamentos</div></div>
+    <div class="card"><div class="card-bar cb-ac"></div><div class="card-top"><i class="ti ti-building-bank"></i>Saldo período</div><div class="card-val vac" id="ext-saldo">R$ 0</div><div class="card-sub" id="ext-banco-nome">—</div></div>
+    <div class="card"><div class="card-bar cb-am"></div><div class="card-top"><i class="ti ti-checkbox"></i>Selecionados</div><div class="card-val vam" id="ext-selecionados-val">R$ 0</div><div class="card-sub" id="ext-selecionados-ct">0 itens</div></div>
+  </div>
+
+  <!-- Filtros -->
+  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap" id="extrato-filtros" style="display:none">
+    <input class="fi" style="width:220px" type="text" id="busca-extrato" placeholder="Buscar descrição..." oninput="renderExtrato()">
+    <select class="fi" style="width:150px" id="filtro-extrato-tipo" onchange="renderExtrato()">
+      <option value="">Todos</option>
+      <option value="entrada">Entradas</option>
+      <option value="saida">Saídas</option>
+    </select>
+    <select class="fi" style="width:180px" id="filtro-extrato-status" onchange="renderExtrato()">
+      <option value="">Todos os status</option>
+      <option value="pendente">Pendentes de lançar</option>
+      <option value="lancado">Já lançados</option>
+      <option value="ignorado">Ignorados</option>
+    </select>
+    <button class="btn btn-ghost btn-sm" onclick="selecionarTodosPendentes()"><i class="ti ti-checkbox"></i>Selecionar pendentes</button>
+    <button class="btn btn-ghost btn-sm" onclick="deselecionarTodos()"><i class="ti ti-square"></i>Desmarcar todos</button>
+  </div>
+
+  <!-- Tabela extrato -->
+  <div id="extrato-tabela-wrap" style="display:none">
+    <div class="tw">
+      <table>
+        <thead><tr>
+          <th style="width:32px"><input type="checkbox" id="chk-todos-extrato" onchange="toggleTodosExtrato(this.checked)" style="cursor:pointer"></th>
+          <th>Data</th>
+          <th>Descrição</th>
+          <th>Tipo</th>
+          <th>Categoria sugerida</th>
+          <th style="text-align:right">Valor</th>
+          <th>Status</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="tb-extrato"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Vazio -->
+  <div id="extrato-vazio" class="vazio" style="padding:60px">
+    <i class="ti ti-building-bank" style="font-size:48px;color:var(--b2);display:block;margin-bottom:12px"></i>
+    <p>Nenhum extrato importado.</p>
+    <p style="margin-top:6px;font-size:12px">Selecione o banco e importe o arquivo CSV.</p>
+  </div>
+</div>
+
+<!-- MODAL REVISAR LANÇAMENTO DO EXTRATO -->
+<div class="mov" id="m-extrato-lanc">
+  <div class="modal" style="width:540px">
+    <h3><i class="ti ti-building-bank" style="color:var(--ac)"></i>Revisar e lançar</h3>
+    <div class="modal-sub" id="m-extrato-lanc-sub">Confirme os dados antes de lançar</div>
+    <input type="hidden" id="ext-lanc-idx">
+    <div class="fgrid">
+      <div><label class="fl">Tipo</label>
+        <select class="fi" id="ext-lanc-tipo">
+          <option value="receita">Entrada (Receita)</option>
+          <option value="despesa">Saída (Despesa)</option>
+        </select>
+      </div>
+      <div><label class="fl">Data</label><input class="fi" type="date" id="ext-lanc-data"></div>
+      <div class="full"><label class="fl">Descrição</label><input class="fi" type="text" id="ext-lanc-desc"></div>
+      <div><label class="fl">Categoria</label>
+        <select class="fi" id="ext-lanc-cat">
+          <option value="receita">Receita de vendas</option>
+          <option value="cmv">CMV — Custo Mercadoria</option>
+          <option value="comercial">Comercial</option>
+          <option value="administrativo">Administrativo</option>
+          <option value="pessoal">Pessoal (folha/pró-labore)</option>
+          <option value="fiscal">Fiscal (impostos)</option>
+          <option value="financeiro">Financeiro (juros/tarifas)</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div><label class="fl">Valor (R$)</label><input class="fi" type="number" step="0.01" id="ext-lanc-valor"></div>
+      <div class="full"><label class="fl">Observação</label><input class="fi" type="text" id="ext-lanc-obs" placeholder="Opcional"></div>
+    </div>
+    <div class="mbtns">
+      <button class="btn btn-ghost" onclick="ignorarItemExtrato()"><i class="ti ti-eye-off"></i>Ignorar</button>
+      <button class="btn btn-ghost" onclick="fechM('m-extrato-lanc')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarLancamentoExtrato()"><i class="ti ti-check"></i>Lançar</button>
+    </div>
+  </div>
+</div>
 
 </main>
 </div>
@@ -1594,7 +1714,7 @@ function setFiltro(f, el) {
   renderLanc();
 }
 function setMod(m, el) {
-  ['dashboard','lancamentos','faturamento','fornecedores','cartoes','dre','fluxo','indicadores'].forEach(function(x){
+  ['dashboard','lancamentos','faturamento','fornecedores','cartoes','extrato','dre','fluxo','indicadores'].forEach(function(x){
     var d = document.getElementById('mod-'+x);
     if(d) d.style.display = x===m ? 'block' : 'none';
   });
@@ -1606,6 +1726,7 @@ function setMod(m, el) {
   if(m==='faturamento') { renderFatDiario(); }
   if(m==='fornecedores') { renderFornecedores(); }
   if(m==='cartoes') { renderCartoes(); }
+  if(m==='extrato') { renderExtrato(); }
 }
 function abrM(id){ document.getElementById(id).classList.add('ab'); }
 function fechM(id){ document.getElementById(id).classList.remove('ab'); }
@@ -2647,6 +2768,637 @@ mostrarApp = function() {
 // Registrar event listener para forn-status
 document.addEventListener('change', function(e){ if (e.target && e.target.id==='forn-status') togglePgtoWrap(); });
 
+
+// ════════════════════════════════════════════════
+// EXTRATO BANCÁRIO — BB, SICREDI, ITAÚ, BRADESCO
+// ════════════════════════════════════════════════
+var EXTRATO_ITENS = [];
+
+// Palavras-chave para sugerir categoria automaticamente
+var CATEG_KEYWORDS = {
+  pessoal:       ['salario','salário','folha','prolabore','pró-labore','pro-labore','fgts','inss','rescisao','rescisão','ferias','férias','13o','decimo','décimo','adiantamento'],
+  fiscal:        ['simples nacional','das ','tributo','imposto','irpj','irpf','csll','cofins','pis ','iss ','icms','receita federal','pgdas','sefaz','nota fiscal'],
+  financeiro:    ['tarifa','iof','juros','ted ','doc ','pix tarifa','manutenção','manutencao','spread','cdb','aplicacao','aplicação','resgate','rendimento','banco','financ'],
+  administrativo:['aluguel','energia','luz ','agua ','água ','internet','telefone','celular','limpeza','material escritório','escritorio','seguro','condominio','condomínio','correios','contador','contabilidade'],
+  cmv:           ['fornecedor','nota fiscal entrada','compra mercancias','mercadoria','estoque','distribuidora','atacado','industria','indústria','produto'],
+  comercial:     ['marketing','publicidade','propaganda','embalagem','frete','entrega','logistica','logística','delivery'],
+};
+
+var ENTRADAS_KEYWORDS = ['recebimento','venda','deposito','depósito','pix recebido','ted recebida','doc recebido','crédito','credito','transferencia recebida','transferência recebida','boleto recebido','cobranca recebida','cobrança recebida','cielo','rede','stone','getnet','pagseguro','mercadopago'];
+
+var SAIDAS_KEYWORDS = ['pagamento','debito','débito','saque','transferencia enviada','transferência enviada','pix enviado','ted enviada','doc enviado','boleto pago','compra','tarifa','iof','juros','taxa'];
+
+function sugerirCategoria(descricao) {
+  var d = descricao.toLowerCase();
+  for (var cat in CATEG_KEYWORDS) {
+    if (CATEG_KEYWORDS[cat].some(function(k){ return d.indexOf(k) > -1; })) return cat;
+  }
+  return 'outro';
+}
+
+function inferirTipo(descricao, valor) {
+  var d = descricao.toLowerCase();
+  if (valor > 0) {
+    if (SAIDAS_KEYWORDS.some(function(k){ return d.indexOf(k) > -1; })) return 'saida';
+    return 'entrada';
+  }
+  return 'saida';
+}
+
+// ── PARSERS POR BANCO ──
+
+function parseBB(linhas) {
+  // BB: cabeçalho variável, dados começam após linha com "Data"
+  // Formato: Data;Histórico;Docto;Crédito(R$);Débito(R$);Saldo(R$)
+  var itens = [];
+  var headerIdx = -1;
+  for (var i = 0; i < Math.min(linhas.length, 20); i++) {
+    var l = linhas[i].toLowerCase();
+    if ((l.indexOf('data') > -1 && l.indexOf('hist') > -1) ||
+        (l.indexOf('data') > -1 && l.indexOf('cr') > -1)) {
+      headerIdx = i; break;
+    }
+  }
+  if (headerIdx === -1) return null;
+  var headers = linhas[headerIdx].split(';').map(function(h){ return h.trim().toLowerCase().replace(/['"]/g,''); });
+  var iData   = headers.findIndex(function(h){ return h.indexOf('data') > -1; });
+  var iDesc   = headers.findIndex(function(h){ return h.indexOf('hist') > -1 || h.indexOf('descr') > -1; });
+  var iCred   = headers.findIndex(function(h){ return h.indexOf('cred') > -1; });
+  var iDeb    = headers.findIndex(function(h){ return h.indexOf('deb') > -1; });
+  var iValor  = headers.findIndex(function(h){ return h === 'valor' || h === 'valor(r$)'; });
+
+  for (var i = headerIdx + 1; i < linhas.length; i++) {
+    var cols = linhas[i].split(';').map(function(c){ return c.trim().replace(/^"|"$/g,''); });
+    if (cols.length < 3 || !cols[0]) continue;
+    var data = parsarData(cols[iData > -1 ? iData : 0]);
+    if (!data) continue;
+    var desc = cols[iDesc > -1 ? iDesc : 1] || '';
+
+    var valor = 0, tipo = 'saida';
+    if (iCred > -1 && iDeb > -1) {
+      var cred = parseValorBR(cols[iCred]);
+      var deb  = parseValorBR(cols[iDeb]);
+      if (cred > 0) { valor = cred; tipo = 'entrada'; }
+      else if (deb > 0) { valor = deb; tipo = 'saida'; }
+    } else if (iValor > -1) {
+      valor = parseValorBR(cols[iValor]);
+      tipo  = valor >= 0 ? 'entrada' : 'saida';
+      valor = Math.abs(valor);
+    }
+    if (valor <= 0) continue;
+    itens.push({ data:data, desc:desc, valor:valor, tipo:tipo, cat:sugerirCategoria(desc+' '+tipo), status:'pendente', banco:'Banco do Brasil' });
+  }
+  return itens.length ? itens : null;
+}
+
+function parseSicredi(linhas) {
+  // Sicredi: Data Lançamento;Descrição;Valor;Natureza (C/D)
+  // Ou: Data;Histórico;Valor;Tipo
+  var itens = [];
+  var headerIdx = -1;
+  for (var i = 0; i < Math.min(linhas.length, 15); i++) {
+    var l = linhas[i].toLowerCase();
+    if (l.indexOf('data') > -1 && (l.indexOf('descr') > -1 || l.indexOf('hist') > -1 || l.indexOf('lanc') > -1)) {
+      headerIdx = i; break;
+    }
+  }
+  if (headerIdx === -1) return null;
+  var sep = linhas[headerIdx].indexOf(';') > -1 ? ';' : ',';
+  var headers = linhas[headerIdx].split(sep).map(function(h){ return h.trim().toLowerCase().replace(/['"]/g,''); });
+  var iData  = headers.findIndex(function(h){ return h.indexOf('data') > -1; });
+  var iDesc  = headers.findIndex(function(h){ return h.indexOf('descr') > -1 || h.indexOf('hist') > -1 || h.indexOf('lanc') > -1 && h.indexOf('data') === -1; });
+  var iValor = headers.findIndex(function(h){ return h === 'valor' || h.indexOf('valor') > -1; });
+  var iNat   = headers.findIndex(function(h){ return h.indexOf('natur') > -1 || h.indexOf('tipo') > -1 || h === 'c/d' || h === 'd/c'; });
+
+  for (var i = headerIdx + 1; i < linhas.length; i++) {
+    var cols = linhas[i].split(sep).map(function(c){ return c.trim().replace(/^"|"$/g,''); });
+    if (cols.length < 3 || !cols[0]) continue;
+    var data = parsarData(cols[iData > -1 ? iData : 0]);
+    if (!data) continue;
+    var desc  = cols[iDesc > -1 ? iDesc : 1] || '';
+    var valor = Math.abs(parseValorBR(cols[iValor > -1 ? iValor : 2]));
+    if (valor <= 0) continue;
+    var tipo = 'saida';
+    if (iNat > -1) {
+      var nat = (cols[iNat]||'').toUpperCase().trim();
+      tipo = (nat === 'C' || nat === 'CR' || nat === 'CRÉDITO' || nat === 'CREDITO') ? 'entrada' : 'saida';
+    } else {
+      var raw = parseValorBR(cols[iValor > -1 ? iValor : 2]);
+      tipo = raw >= 0 ? 'entrada' : 'saida';
+    }
+    itens.push({ data:data, desc:desc, valor:valor, tipo:tipo, cat:sugerirCategoria(desc+' '+tipo), status:'pendente', banco:'Sicredi' });
+  }
+  return itens.length ? itens : null;
+}
+
+function parseItau(linhas) {
+  // Itaú: cabeçalho com info conta, depois Data;Histórico;Valor
+  var itens = [];
+  var headerIdx = -1;
+  for (var i = 0; i < Math.min(linhas.length, 15); i++) {
+    var l = linhas[i].toLowerCase();
+    if (l.indexOf('data') > -1 && (l.indexOf('hist') > -1 || l.indexOf('valor') > -1)) {
+      headerIdx = i; break;
+    }
+  }
+  if (headerIdx === -1) return null;
+  var sep = linhas[headerIdx].indexOf(';') > -1 ? ';' : ',';
+  var headers = linhas[headerIdx].split(sep).map(function(h){ return h.trim().toLowerCase().replace(/['"]/g,''); });
+  var iData  = headers.findIndex(function(h){ return h.indexOf('data') > -1; });
+  var iDesc  = headers.findIndex(function(h){ return h.indexOf('hist') > -1 || h.indexOf('descr') > -1; });
+  var iValor = headers.findIndex(function(h){ return h === 'valor' || h.indexOf('valor') > -1; });
+
+  for (var i = headerIdx + 1; i < linhas.length; i++) {
+    var cols = linhas[i].split(sep).map(function(c){ return c.trim().replace(/^"|"$/g,''); });
+    if (cols.length < 2 || !cols[0]) continue;
+    // Ignorar linhas de saldo/totais
+    var primeiraCol = (cols[0]||'').toLowerCase();
+    if (primeiraCol.indexOf('saldo') > -1 || primeiraCol.indexOf('total') > -1) continue;
+    var data = parsarData(cols[iData > -1 ? iData : 0]);
+    if (!data) continue;
+    var desc  = cols[iDesc > -1 ? iDesc : 1] || '';
+    var raw   = parseValorBR(cols[iValor > -1 ? iValor : cols.length - 1]);
+    if (raw === 0) continue;
+    var valor = Math.abs(raw);
+    var tipo  = raw >= 0 ? 'entrada' : 'saida';
+    // Itaú às vezes usa sinal invertido — usar keywords como tie-breaker
+    if (raw > 0 && SAIDAS_KEYWORDS.some(function(k){ return desc.toLowerCase().indexOf(k) > -1; })) tipo = 'saida';
+    itens.push({ data:data, desc:desc, valor:valor, tipo:tipo, cat:sugerirCategoria(desc+' '+tipo), status:'pendente', banco:'Itaú' });
+  }
+  return itens.length ? itens : null;
+}
+
+function parseBradesco(linhas) {
+  // Bradesco: Data;Histórico;Valor do lançamento;Valor do saldo
+  var itens = [];
+  var headerIdx = -1;
+  for (var i = 0; i < Math.min(linhas.length, 20); i++) {
+    var l = linhas[i].toLowerCase();
+    if (l.indexOf('data') > -1 && (l.indexOf('hist') > -1 || l.indexOf('lancamento') > -1 || l.indexOf('lançamento') > -1)) {
+      headerIdx = i; break;
+    }
+  }
+  if (headerIdx === -1) return null;
+  var sep = linhas[headerIdx].indexOf(';') > -1 ? ';' : (linhas[headerIdx].indexOf('\t') > -1 ? '\t' : ',');
+  var headers = linhas[headerIdx].split(sep).map(function(h){ return h.trim().toLowerCase().replace(/['"]/g,''); });
+  var iData  = headers.findIndex(function(h){ return h.indexOf('data') > -1; });
+  var iDesc  = headers.findIndex(function(h){ return h.indexOf('hist') > -1 || h.indexOf('descr') > -1; });
+  var iValor = headers.findIndex(function(h){ return h.indexOf('lancamento') > -1 || h.indexOf('lançamento') > -1 || h === 'valor'; });
+  if (iValor === -1) iValor = headers.findIndex(function(h){ return h.indexOf('valor') > -1; });
+
+  for (var i = headerIdx + 1; i < linhas.length; i++) {
+    var cols = linhas[i].split(sep).map(function(c){ return c.trim().replace(/^"|"$/g,''); });
+    if (cols.length < 3 || !cols[0]) continue;
+    var primeiraCol = (cols[0]||'').toLowerCase();
+    if (primeiraCol.indexOf('saldo') > -1 || primeiraCol.indexOf('total') > -1 || primeiraCol === '') continue;
+    var data = parsarData(cols[iData > -1 ? iData : 0]);
+    if (!data) continue;
+    var desc  = cols[iDesc > -1 ? iDesc : 1] || '';
+    var raw   = parseValorBR(cols[iValor > -1 ? iValor : 2]);
+    if (raw === 0) continue;
+    var valor = Math.abs(raw);
+    var tipo  = raw >= 0 ? 'entrada' : 'saida';
+    itens.push({ data:data, desc:desc, valor:valor, tipo:tipo, cat:sugerirCategoria(desc+' '+tipo), status:'pendente', banco:'Bradesco' });
+  }
+  return itens.length ? itens : null;
+}
+
+// ── HELPERS ──
+
+function parseValorBR(str) {
+  if (!str) return 0;
+  str = str.replace(/[R$\s]/g,'').trim();
+  // Formato BR: 1.234,56 → remover . e trocar , por .
+  if (str.indexOf(',') > -1 && str.indexOf('.') > -1) {
+    str = str.replace(/\./g,'').replace(',','.');
+  } else if (str.indexOf(',') > -1) {
+    str = str.replace(',','.');
+  }
+  return parseFloat(str) || 0;
+}
+
+function parsarData(str) {
+  if (!str) return null;
+  str = str.trim().replace(/['"]/g,'');
+  // DD/MM/YYYY ou DD-MM-YYYY
+  var m = str.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+  if (m) return m[3]+'-'+m[2]+'-'+m[1];
+  // YYYY-MM-DD
+  if (str.match(/^\d{4}-\d{2}-\d{2}$/)) return str;
+  // DD/MM/YY
+  var m2 = str.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{2})$/);
+  if (m2) return '20'+m2[3]+'-'+m2[2]+'-'+m2[1];
+  return null;
+}
+
+// ── IMPORTAÇÃO ──
+
+function importarExtratoCSV(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var nome = file.name.toLowerCase();
+  var ext  = nome.split('.').pop();
+
+  if (ext === 'xlsx' || ext === 'xls') {
+    // Excel — usar SheetJS via CDN
+    if (typeof XLSX === 'undefined') {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload = function() { lerExcel(file); };
+      document.head.appendChild(s);
+    } else {
+      lerExcel(file);
+    }
+    input.value = '';
+    return;
+  }
+
+  // CSV, OFX ou TXT — tentar UTF-8 primeiro, depois latin-1
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    // Detectar OFX/QIF pelo conteúdo
+    if (text.indexOf('<OFX>') > -1 || text.indexOf('<ofx>') > -1 ||
+        text.indexOf('OFXHEADER') > -1 || text.indexOf('<STMTTRN>') > -1) {
+      processarOFX(text);
+    } else {
+      processarExtratoTexto(text);
+    }
+    input.value = '';
+  };
+  reader.onerror = function() {
+    var r2 = new FileReader();
+    r2.onload = function(e2) {
+      var t = e2.target.result;
+      if (t.indexOf('<OFX>') > -1 || t.indexOf('OFXHEADER') > -1 || t.indexOf('<STMTTRN>') > -1) {
+        processarOFX(t);
+      } else {
+        processarExtratoTexto(t);
+      }
+    };
+    r2.readAsText(file, 'ISO-8859-1');
+  };
+  reader.readAsText(file, 'ISO-8859-1'); // bancos BR quase sempre latin-1
+}
+
+// ── PARSER OFX (Sicredi, BB, Bradesco, Itaú) ──
+function processarOFX(text) {
+  var banco = document.getElementById('extrato-banco-sel').value;
+  var nomeBanco = { bb:'Banco do Brasil', sicredi:'Sicredi', itau:'Itaú', bradesco:'Bradesco' }[banco] || 'Banco';
+
+  // Detectar banco pelo conteúdo OFX se não selecionado
+  if (!banco || banco === 'auto') {
+    if (text.indexOf('SICREDI') > -1 || text.indexOf('Sicredi') > -1) nomeBanco = 'Sicredi';
+    else if (text.indexOf('BANCO DO BRASIL') > -1 || text.indexOf('001') > -1) nomeBanco = 'Banco do Brasil';
+    else if (text.indexOf('ITAU') > -1 || text.indexOf('Itau') > -1 || text.indexOf('341') > -1) nomeBanco = 'Itaú';
+    else if (text.indexOf('BRADESCO') > -1 || text.indexOf('237') > -1) nomeBanco = 'Bradesco';
+  }
+
+  // Extrair transações — OFX usa tags SGML (não é XML válido, então parsear manualmente)
+  function getTag(bloco, tag) {
+    var re = new RegExp('<' + tag + '>([^<]+)', 'i');
+    var m = bloco.match(re);
+    return m ? m[1].trim() : '';
+  }
+
+  // Dividir em blocos STMTTRN
+  var blocos = [];
+  var re = /<STMTTRN>([\s\S]*?)<\/STMTTRN>/gi;
+  var m;
+  while ((m = re.exec(text)) !== null) blocos.push(m[1]);
+
+  // OFX sem tag de fechamento (formato legado)
+  if (!blocos.length) {
+    var partes = text.split(/<STMTTRN>/i);
+    for (var i = 1; i < partes.length; i++) blocos.push(partes[i]);
+  }
+
+  if (!blocos.length) {
+    toast('Nenhuma transação encontrada no arquivo OFX.', false);
+    return;
+  }
+
+  var itens = [];
+  blocos.forEach(function(bloco) {
+    var trntype = getTag(bloco, 'TRNTYPE');
+    var dtpost  = getTag(bloco, 'DTPOSTED');
+    var valor   = parseFloat(getTag(bloco, 'TRNAMT').replace(',','.')) || 0;
+    var memo    = getTag(bloco, 'MEMO') || getTag(bloco, 'NAME') || 'Lançamento';
+    var fitid   = getTag(bloco, 'FITID');
+
+    if (!dtpost || valor === 0) return;
+
+    // Converter data OFX: YYYYMMDD ou YYYYMMDDHHMMSS
+    var dataISO = dtpost.replace(/^(\d{4})(\d{2})(\d{2}).*/, '$1-$2-$3');
+    if (!dataISO.match(/^\d{4}-\d{2}-\d{2}$/)) return;
+
+    var tipo = valor >= 0 ? 'entrada' : 'saida';
+    // TRNTYPE ajuda: DEBIT, CREDIT, CHECK, DEP, INT, FEE, SRVCHG, etc.
+    if (trntype) {
+      var tt = trntype.toUpperCase();
+      if (tt === 'CREDIT' || tt === 'DEP' || tt === 'INT' || tt === 'DIV') tipo = 'entrada';
+      else if (tt === 'DEBIT' || tt === 'CHECK' || tt === 'FEE' || tt === 'SRVCHG' || tt === 'ATM') tipo = 'saida';
+    }
+
+    itens.push({
+      data:   dataISO,
+      desc:   memo,
+      valor:  Math.abs(valor),
+      tipo:   tipo,
+      cat:    sugerirCategoria(memo + ' ' + tipo),
+      status: 'pendente',
+      banco:  nomeBanco,
+      fitid:  fitid
+    });
+  });
+
+  if (!itens.length) {
+    toast('Nenhum lançamento válido no arquivo OFX.', false);
+    return;
+  }
+
+  itens.sort(function(a,b){ return a.data.localeCompare(b.data); });
+  EXTRATO_ITENS = itens;
+  toast(itens.length + ' lançamentos importados do ' + nomeBanco + ' (OFX)!', true);
+  renderExtrato();
+}
+
+// ── PARSER EXCEL (xlsx/xls) ──
+function lerExcel(file) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var wb   = XLSX.read(e.target.result, { type:'array', cellDates:true });
+      var ws   = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+      // Converter para CSV e usar o parser de texto
+      var csv = rows.map(function(row){
+        return row.map(function(cell){
+          if (cell instanceof Date) {
+            var d = cell;
+            return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
+          }
+          return String(cell).replace(/;/g,',');
+        }).join(';');
+      }).join('\n');
+      processarExtratoTexto(csv);
+    } catch(err) {
+      toast('Erro ao ler Excel: ' + err.message, false);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── PARSER CSV/TXT ──
+function processarExtratoTexto(text) {
+  var linhas = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+  if (linhas.length < 2) { toast('Arquivo vazio ou inválido.', false); return; }
+
+  var banco = document.getElementById('extrato-banco-sel').value;
+  var resultado = null;
+
+  if (banco === 'bb')            resultado = parseBB(linhas);
+  else if (banco === 'sicredi')  resultado = parseSicredi(linhas);
+  else if (banco === 'itau')     resultado = parseItau(linhas);
+  else if (banco === 'bradesco') resultado = parseBradesco(linhas);
+  else {
+    resultado = parseBB(linhas) || parseSicredi(linhas) || parseItau(linhas) || parseBradesco(linhas);
+    if (!resultado) {
+      toast('Não foi possível identificar o banco. Selecione manualmente.', false);
+      return;
+    }
+  }
+
+  if (!resultado || resultado.length === 0) {
+    toast('Nenhum lançamento encontrado. Verifique o banco selecionado.', false);
+    return;
+  }
+
+  resultado.sort(function(a,b){ return a.data.localeCompare(b.data); });
+  EXTRATO_ITENS = resultado;
+  toast(resultado.length + ' lançamentos importados do ' + resultado[0].banco + '!', true);
+  renderExtrato();
+}
+
+// ── RENDERIZAÇÃO ──
+
+function renderExtrato() {
+  var vazio   = document.getElementById('extrato-vazio');
+  var tabWrap = document.getElementById('extrato-tabela-wrap');
+  var filtros = document.getElementById('extrato-filtros');
+  var btnLanc = document.getElementById('btn-lancar-selecionados');
+  var instruc = document.getElementById('extrato-instrucao');
+
+  if (!EXTRATO_ITENS.length) {
+    if (vazio)   vazio.style.display   = 'block';
+    if (tabWrap) tabWrap.style.display = 'none';
+    if (filtros) filtros.style.display = 'none';
+    if (btnLanc) btnLanc.style.display = 'none';
+    return;
+  }
+
+  if (vazio)   vazio.style.display   = 'none';
+  if (tabWrap) tabWrap.style.display = 'block';
+  if (filtros) filtros.style.display = 'flex';
+  if (instruc) instruc.style.display = 'none';
+  if (btnLanc) btnLanc.style.display = 'inline-flex';
+
+  // Calcular resumo
+  var totEnt = 0, totSai = 0, ctEnt = 0, ctSai = 0;
+  var selVal = 0, selCt = 0;
+  EXTRATO_ITENS.forEach(function(it, idx) {
+    if (it.tipo === 'entrada') { totEnt += it.valor; ctEnt++; }
+    else { totSai += it.valor; ctSai++; }
+    if (it._selecionado) { selVal += it.valor; selCt++; }
+  });
+
+  setText('ext-entradas',    R(totEnt));
+  setText('ext-entradas-ct', ctEnt + ' lançamentos');
+  setText('ext-saidas',      R(totSai));
+  setText('ext-saidas-ct',   ctSai + ' lançamentos');
+  setText('ext-saldo',       R(totEnt - totSai));
+  setText('ext-banco-nome',  EXTRATO_ITENS[0] ? EXTRATO_ITENS[0].banco : '—');
+  setText('ext-selecionados-val', R(selVal));
+  setText('ext-selecionados-ct',  selCt + ' itens');
+
+  // Atualizar label do botão lançar
+  if (btnLanc) btnLanc.innerHTML = '<i class="ti ti-check"></i> Lançar ' + selCt + ' selecionado' + (selCt !== 1 ? 's' : '');
+
+  // Filtros
+  var busca   = (document.getElementById('busca-extrato')||{value:''}).value.toLowerCase();
+  var filtTipo = (document.getElementById('filtro-extrato-tipo')||{value:''}).value;
+  var filtSt   = (document.getElementById('filtro-extrato-status')||{value:''}).value;
+
+  var lista = EXTRATO_ITENS.filter(function(it) {
+    return (!busca    || it.desc.toLowerCase().indexOf(busca) > -1) &&
+           (!filtTipo || it.tipo === filtTipo) &&
+           (!filtSt   || it.status === filtSt);
+  });
+
+  var CAT_LABELS_EXT = { receita:'Receita', cmv:'CMV', comercial:'Comercial', administrativo:'Administrativo', pessoal:'Pessoal', fiscal:'Fiscal', financeiro:'Financeiro', outro:'Outro' };
+  var STATUS_PILL = {
+    pendente: '<span class="pill p-am"><i class="ti ti-clock"></i> Pendente</span>',
+    lancado:  '<span class="pill p-gr"><i class="ti ti-check"></i> Lançado</span>',
+    ignorado: '<span class="pill p-mu"><i class="ti ti-eye-off"></i> Ignorado</span>'
+  };
+
+  var tb = document.getElementById('tb-extrato');
+  if (!tb) return;
+
+  if (!lista.length) {
+    tb.innerHTML = '<tr><td colspan="8"><div class="vazio"><i class="ti ti-search-off"></i><p>Nenhum item encontrado.</p></div></td></tr>';
+    return;
+  }
+
+  tb.innerHTML = lista.map(function(it, i) {
+    var realIdx = EXTRATO_ITENS.indexOf(it);
+    var corVal  = it.tipo === 'entrada' ? 'var(--gr)' : 'var(--rd)';
+    var sinal   = it.tipo === 'entrada' ? '+' : '-';
+    var chk     = it._selecionado && it.status === 'pendente' ? 'checked' : '';
+    var disabled = it.status !== 'pendente' ? 'disabled style="opacity:.4"' : '';
+    return '<tr style="opacity:'+(it.status==='ignorado'?'0.45':'1')+'">'+
+      '<td><input type="checkbox" '+chk+' '+disabled+' onchange="toggleItemExtrato('+realIdx+',this.checked)" style="cursor:pointer"></td>'+
+      '<td style="font-size:12px;color:var(--mu);white-space:nowrap">'+fmtData(it.data)+'</td>'+
+      '<td style="font-size:13px;max-width:280px">'+
+        '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+it.desc+'">'+it.desc+'</div>'+
+      '</td>'+
+      '<td><span class="pill '+(it.tipo==='entrada'?'p-gr':'p-rd')+'">'+(it.tipo==='entrada'?'<i class="ti ti-arrow-down-circle"></i> Entrada':'<i class="ti ti-arrow-up-circle"></i> Saída')+'</span></td>'+
+      '<td>'+
+        '<select class="fi" style="padding:4px 8px;font-size:11px;width:140px" onchange="EXTRATO_ITENS['+realIdx+'].cat=this.value">'+
+          Object.keys(CAT_LABELS_EXT).map(function(k){
+            return '<option value="'+k+'"'+(it.cat===k?' selected':'')+'>'+CAT_LABELS_EXT[k]+'</option>';
+          }).join('')+
+        '</select>'+
+      '</td>'+
+      '<td style="text-align:right;font-weight:600;color:'+corVal+';white-space:nowrap">'+sinal+R(it.valor)+'</td>'+
+      '<td>'+(STATUS_PILL[it.status]||'')+'</td>'+
+      '<td style="text-align:right;white-space:nowrap">'+
+        (it.status==='pendente'
+          ? '<button class="btn btn-primary btn-sm" onclick="abrirRevisarExtrato('+realIdx+')" style="margin-right:4px" title="Revisar e lançar"><i class="ti ti-edit"></i></button>'+
+            '<button class="btn btn-ghost btn-sm" onclick="ignorarItemExtratoIdx('+realIdx+')" title="Ignorar"><i class="ti ti-eye-off"></i></button>'
+          : it.status==='lancado'
+            ? '<button class="btn btn-danger btn-sm" onclick="estornarExtrato('+realIdx+')" title="Estornar lançamento"><i class="ti ti-arrow-back-up"></i></button>'
+            : '<button class="btn btn-ghost btn-sm" onclick="reativarExtrato('+realIdx+')" title="Reativar"><i class="ti ti-refresh"></i></button>'
+        )+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+// ── AÇÕES ──
+
+function toggleItemExtrato(idx, checked) {
+  if (EXTRATO_ITENS[idx]) EXTRATO_ITENS[idx]._selecionado = checked;
+  renderExtrato();
+}
+
+function toggleTodosExtrato(checked) {
+  EXTRATO_ITENS.forEach(function(it){ if (it.status==='pendente') it._selecionado = checked; });
+  renderExtrato();
+}
+
+function selecionarTodosPendentes() {
+  EXTRATO_ITENS.forEach(function(it){ if (it.status==='pendente') it._selecionado = true; });
+  renderExtrato();
+}
+
+function deselecionarTodos() {
+  EXTRATO_ITENS.forEach(function(it){ it._selecionado = false; });
+  renderExtrato();
+}
+
+function abrirRevisarExtrato(idx) {
+  var it = EXTRATO_ITENS[idx];
+  if (!it) return;
+  document.getElementById('ext-lanc-idx').value   = idx;
+  document.getElementById('ext-lanc-tipo').value  = it.tipo === 'entrada' ? 'receita' : 'despesa';
+  document.getElementById('ext-lanc-data').value  = it.data;
+  document.getElementById('ext-lanc-desc').value  = it.desc;
+  document.getElementById('ext-lanc-cat').value   = it.cat || 'outro';
+  document.getElementById('ext-lanc-valor').value = it.valor;
+  document.getElementById('ext-lanc-obs').value   = it.banco || '';
+  document.getElementById('m-extrato-lanc-sub').textContent = it.banco + ' · ' + fmtData(it.data);
+  abrM('m-extrato-lanc');
+}
+
+function confirmarLancamentoExtrato() {
+  var idx   = parseInt(document.getElementById('ext-lanc-idx').value);
+  var tipo  = document.getElementById('ext-lanc-tipo').value;
+  var data  = document.getElementById('ext-lanc-data').value;
+  var desc  = document.getElementById('ext-lanc-desc').value.trim();
+  var cat   = document.getElementById('ext-lanc-cat').value;
+  var valor = parseFloat(document.getElementById('ext-lanc-valor').value) || 0;
+  var obs   = document.getElementById('ext-lanc-obs').value.trim();
+
+  if (!desc || !valor || !data) { toast('Preencha todos os campos.', false); return; }
+
+  var lanc = { id: gerarId(), tipo:tipo, data:data, desc:desc, cat: tipo==='receita'?'receita':cat, valor:valor, recor:'nao', obs:obs };
+  LANCAMENTOS.push(lanc);
+  salvarDados();
+  salvarNoSupabase(lanc);
+  calcularTudo();
+
+  if (EXTRATO_ITENS[idx]) {
+    EXTRATO_ITENS[idx].status     = 'lancado';
+    EXTRATO_ITENS[idx]._selecionado = false;
+    EXTRATO_ITENS[idx]._lancId    = lanc.id;
+  }
+
+  fechM('m-extrato-lanc');
+  renderExtrato();
+  toast('Lançado no financeiro!', true);
+}
+
+function lancarSelecionados() {
+  var selecionados = EXTRATO_ITENS.filter(function(it){ return it._selecionado && it.status==='pendente'; });
+  if (!selecionados.length) { toast('Nenhum item selecionado.', false); return; }
+  if (!confirm('Lançar ' + selecionados.length + ' item(s) no financeiro usando a categoria sugerida?')) return;
+
+  selecionados.forEach(function(it) {
+    var tipo = it.tipo === 'entrada' ? 'receita' : 'despesa';
+    var cat  = tipo === 'receita' ? 'receita' : (it.cat || 'outro');
+    var lanc = { id: gerarId(), tipo:tipo, data:it.data, desc:it.desc, cat:cat, valor:it.valor, recor:'nao', obs:'Importado do extrato — '+it.banco };
+    LANCAMENTOS.push(lanc);
+    salvarNoSupabase(lanc);
+    it.status = 'lancado';
+    it._selecionado = false;
+    it._lancId = lanc.id;
+  });
+
+  salvarDados();
+  calcularTudo();
+  renderExtrato();
+  toast(selecionados.length + ' lançamentos criados!', true);
+}
+
+function ignorarItemExtrato() {
+  var idx = parseInt(document.getElementById('ext-lanc-idx').value);
+  ignorarItemExtratoIdx(idx);
+  fechM('m-extrato-lanc');
+}
+
+function ignorarItemExtratoIdx(idx) {
+  if (EXTRATO_ITENS[idx]) { EXTRATO_ITENS[idx].status = 'ignorado'; EXTRATO_ITENS[idx]._selecionado = false; }
+  renderExtrato();
+}
+
+function estornarExtrato(idx) {
+  var it = EXTRATO_ITENS[idx];
+  if (!it || !it._lancId) { toast('Não foi possível localizar o lançamento original.', false); return; }
+  if (!confirm('Estornar este lançamento do financeiro?')) return;
+  LANCAMENTOS = LANCAMENTOS.filter(function(l){ return l.id !== it._lancId; });
+  salvarDados();
+  calcularTudo();
+  it.status = 'pendente';
+  it._lancId = null;
+  renderExtrato();
+  toast('Lançamento estornado!', true);
+}
+
+function reativarExtrato(idx) {
+  if (EXTRATO_ITENS[idx]) { EXTRATO_ITENS[idx].status = 'pendente'; EXTRATO_ITENS[idx]._selecionado = false; }
+  renderExtrato();
+}
 
 verificarSessao();
 </script>
