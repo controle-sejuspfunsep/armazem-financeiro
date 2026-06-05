@@ -421,10 +421,149 @@ tbody td{padding:9px 14px;font-size:13px;vertical-align:middle}
 
 <!-- ═══ INDICADORES ═══ -->
 <div id="mod-indicadores" style="display:none">
-  <div style="margin-bottom:18px">
-    <h2 style="font-family:Syne,sans-serif;font-size:18px;font-weight:600">Indicadores Financeiros</h2>
-    <p style="font-size:12px;color:var(--mu);margin-top:2px">KPIs completos da operação do Armazém</p>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
+    <div>
+      <h2 style="font-family:Syne,sans-serif;font-size:18px;font-weight:600">Indicadores Financeiros</h2>
+      <p style="font-size:12px;color:var(--mu);margin-top:2px">KPIs avançados, saúde financeira e controle de empréstimos</p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="abrirModalDadosComplementares()"><i class="ti ti-adjustments"></i>Dados complementares</button>
+      <button class="btn btn-primary" onclick="abrirModalEmprestimo()"><i class="ti ti-plus"></i>Novo empréstimo</button>
+    </div>
   </div>
+
+  <!-- SAÚDE FINANCEIRA -->
+  <div class="sec" style="margin-bottom:14px">
+    <div class="sec-h"><div><div class="sec-t"><i class="ti ti-heart-rate-monitor" style="margin-right:6px;color:var(--gr)"></i>Saúde Financeira</div><div class="sec-s">Score calculado com base nos seus indicadores do mês</div></div>
+    <div id="saude-score-badge" style="font-family:Syne,sans-serif;font-size:22px;font-weight:700;color:var(--gr)">—</div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:10px" id="saude-itens"></div>
+    <div style="margin-top:12px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--mu);margin-bottom:4px"><span>Score geral</span><span id="saude-score-txt">0 / 100</span></div>
+      <div class="pb-wrap" style="height:10px"><div class="pb-fill" id="saude-bar" style="width:0%;height:10px;border-radius:5px;background:var(--gr)"></div></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <!-- RENTABILIDADE -->
+    <div class="sec">
+      <div class="sec-h"><div><div class="sec-t">Rentabilidade</div></div></div>
+      <div class="ind-grid" style="grid-template-columns:1fr 1fr">
+        <div class="ind-card"><div class="ind-label">Margem bruta</div><div class="ind-val vgr" id="i-mb">0%</div><div class="ind-formula">Lucro bruto ÷ receita</div></div>
+        <div class="ind-card"><div class="ind-label">Margem operacional</div><div class="ind-val vac" id="i-mo">0%</div><div class="ind-formula">Res. operacional ÷ receita</div></div>
+        <div class="ind-card"><div class="ind-label">Margem líquida</div><div class="ind-val vpu" id="i-ml">0%</div><div class="ind-formula">Lucro líquido ÷ receita</div></div>
+        <div class="ind-card"><div class="ind-label">EBITDA</div><div class="ind-val vcy" id="i-ebitda">R$ 0</div><div class="ind-formula">Lucro + depr. + amort. + juros + IR</div></div>
+        <div class="ind-card"><div class="ind-label">Margem EBITDA</div><div class="ind-val vcy" id="i-ebitda-pct">0%</div><div class="ind-formula">EBITDA ÷ receita</div></div>
+        <div class="ind-card"><div class="ind-label">Margem contribuição</div><div class="ind-val vam" id="i-mc2">0%</div><div class="ind-formula">(Rec − CMV − var.) ÷ receita</div></div>
+      </div>
+    </div>
+    <!-- EFICIÊNCIA -->
+    <div class="sec">
+      <div class="sec-h"><div><div class="sec-t">Eficiência operacional</div></div></div>
+      <div class="ind-grid" style="grid-template-columns:1fr 1fr">
+        <div class="ind-card"><div class="ind-label">Comprometimento</div><div class="ind-val vam" id="i-cr">0%</div><div class="ind-formula">Total desp. ÷ receita</div></div>
+        <div class="ind-card"><div class="ind-label">CMV / receita</div><div class="ind-val vrd" id="i-cmvr">0%</div><div class="ind-formula">CMV ÷ receita bruta</div></div>
+        <div class="ind-card"><div class="ind-label">ROCE</div><div class="ind-val vgr" id="i-roce">0%</div><div class="ind-formula">EBIT ÷ capital empregado</div></div>
+        <div class="ind-card"><div class="ind-label">Capital empregado</div><div class="ind-val vac" id="i-cap-emp">R$ 0</div><div class="ind-formula">Ativo total − passivo circ.</div></div>
+        <div class="ind-card"><div class="ind-label">Custo fixo / receita</div><div class="ind-val vam" id="i-cfr">0%</div><div class="ind-formula">Desp. fixas ÷ receita</div></div>
+        <div class="ind-card"><div class="ind-label">Custo variável / rec.</div><div class="ind-val vam" id="i-cvr">0%</div><div class="ind-formula">Desp. variáveis ÷ receita</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <!-- CAPITAL DE GIRO -->
+    <div class="sec">
+      <div class="sec-h">
+        <div><div class="sec-t">Capital de Giro</div><div class="sec-s">Ativos e passivos circulantes</div></div>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('csv-capital-giro').click()"><i class="ti ti-upload"></i>CSV ERP</button>
+        <input type="file" id="csv-capital-giro" accept=".csv" style="display:none" onchange="importarCapitalGiro(this)">
+      </div>
+      <div class="ind-grid" style="grid-template-columns:1fr 1fr">
+        <div class="ind-card"><div class="ind-label">Capital de giro</div><div class="ind-val vgr" id="i-cg">R$ 0</div><div class="ind-formula">Ativo circ. − passivo circ.</div></div>
+        <div class="ind-card"><div class="ind-label">Índice liquidez corr.</div><div class="ind-val vac" id="i-lc">0x</div><div class="ind-formula">Ativo circ. ÷ passivo circ.</div></div>
+        <div class="ind-card"><div class="ind-label">Contas a receber</div><div class="ind-val" id="i-ar">R$ 0</div><div class="ind-formula">Clientes em aberto</div></div>
+        <div class="ind-card"><div class="ind-label">Estoque</div><div class="ind-val" id="i-est">R$ 0</div><div class="ind-formula">Valor do estoque atual</div></div>
+        <div class="ind-card"><div class="ind-label">Contas a pagar</div><div class="ind-val vrd" id="i-ap">R$ 0</div><div class="ind-formula">Fornecedores em aberto</div></div>
+        <div class="ind-card"><div class="ind-label">Ciclo financeiro</div><div class="ind-val vpu" id="i-ciclo">0 dias</div><div class="ind-formula">PME + PMR − PMP</div></div>
+      </div>
+    </div>
+    <!-- ENDIVIDAMENTO -->
+    <div class="sec">
+      <div class="sec-h"><div><div class="sec-t">Endividamento</div><div class="sec-s">Estrutura de capital e dívidas</div></div></div>
+      <div class="ind-grid" style="grid-template-columns:1fr 1fr">
+        <div class="ind-card"><div class="ind-label">Dívida total</div><div class="ind-val vrd" id="i-div-total">R$ 0</div><div class="ind-formula">Saldo devedor empréstimos</div></div>
+        <div class="ind-card"><div class="ind-label">Endividamento</div><div class="ind-val vrd" id="i-end">0%</div><div class="ind-formula">Dívida total ÷ ativo total</div></div>
+        <div class="ind-card"><div class="ind-label">Dívida / EBITDA</div><div class="ind-val vam" id="i-div-ebitda">0x</div><div class="ind-formula">Dívida ÷ EBITDA anualizado</div></div>
+        <div class="ind-card"><div class="ind-label">Cobertura de juros</div><div class="ind-val vgr" id="i-cob-jur">0x</div><div class="ind-formula">EBIT ÷ despesas financeiras</div></div>
+        <div class="ind-card"><div class="ind-label">Parcelas / mês</div><div class="ind-val vam" id="i-parc-mes">R$ 0</div><div class="ind-formula">Total parcelas vencendo</div></div>
+        <div class="ind-card"><div class="ind-label">Patrimônio líquido</div><div class="ind-val vpu" id="i-pl">R$ 0</div><div class="ind-formula">Informado manualmente</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PONTO DE EQUILÍBRIO E PROJEÇÃO -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+    <div class="sec">
+      <div class="sec-h"><div><div class="sec-t">Ponto de equilíbrio</div></div></div>
+      <div class="ind-card" style="margin-bottom:10px">
+        <div class="ind-label">PE Contábil (R$)</div>
+        <div class="ind-val vpu" id="i-pe-r">R$ 0</div>
+        <div class="ind-formula">Desp. fixas ÷ margem contribuição %</div>
+      </div>
+      <div class="ind-card" style="margin-bottom:10px">
+        <div class="ind-label">Cobertura do PE</div>
+        <div class="ind-val" id="i-pe-cob">0%</div>
+        <div class="ind-formula">Receita atual ÷ PE × 100</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mu);margin-bottom:4px"><span>Receita atual</span><span id="i-pe-prog-txt">0 / 0</span></div>
+      <div class="pb-wrap"><div class="pb-fill" id="i-pe-bar" style="width:0%;background:var(--pu)"></div></div>
+    </div>
+    <div class="sec">
+      <div class="sec-h"><div><div class="sec-t">Projeção do mês</div></div></div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="ind-card"><div class="ind-label">Receita projetada</div><div class="ind-val vgr" id="i-proj-rec">R$ 0</div><div class="ind-formula">Baseada nos lançamentos do mês</div></div>
+        <div class="ind-card"><div class="ind-label">Lucro projetado</div><div class="ind-val" id="i-proj-luc">R$ 0</div><div class="ind-formula">Projeção − despesas estimadas</div></div>
+        <div class="ind-card"><div class="ind-label">Tendência</div><div class="ind-val" id="i-tend" style="font-size:14px">Aguardando dados</div><div class="ind-formula">Variação vs mês anterior</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPRÉSTIMOS -->
+  <div class="sec" style="margin-bottom:14px">
+    <div class="sec-h">
+      <div><div class="sec-t"><i class="ti ti-file-invoice" style="margin-right:6px"></i>Contratos de Empréstimo</div><div class="sec-s">Contratos ativos — parcelas, taxas e custos</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="abrirModalEmprestimo()"><i class="ti ti-plus"></i>Novo contrato</button>
+    </div>
+    <div id="emprestimos-resumo" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:12px"></div>
+    <div class="tw" id="emprestimos-tabela-wrap" style="display:none">
+      <table>
+        <thead><tr>
+          <th>Contrato / Tipo</th>
+          <th>Instituição</th>
+          <th>Início</th>
+          <th style="text-align:center">Parcelas</th>
+          <th style="text-align:right">Parcela (R$)</th>
+          <th>Débito dia</th>
+          <th style="text-align:right">Taxa a.m.</th>
+          <th style="text-align:right">Saldo devedor</th>
+          <th style="text-align:right">Custo total</th>
+          <th></th>
+        </tr></thead>
+        <tbody id="tb-emprestimos"></tbody>
+      </table>
+    </div>
+    <div id="emprestimos-vazio" class="vazio" style="padding:30px">
+      <i class="ti ti-file-invoice" style="font-size:36px;color:var(--b2);display:block;margin-bottom:8px"></i>
+      <p>Nenhum contrato cadastrado.</p>
+    </div>
+  </div>
+
+  <!-- EVOLUÇÃO MENSAL -->
+  <div class="sec">
+    <div class="sec-h"><div><div class="sec-t">Evolução mensal — Últimos 6 meses</div></div></div>
+    <canvas id="chart-evolucao" style="max-height:220px"></canvas>
+  </div>
+</div>
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
     <!-- RENTABILIDADE -->
@@ -565,9 +704,11 @@ tbody td{padding:9px 14px;font-size:13px;vertical-align:middle}
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px">
     <div><h2 style="font-family:Syne,sans-serif;font-size:18px;font-weight:600">Controle de Cartões</h2><p style="font-size:12px;color:var(--mu);margin-top:2px">Conciliação diária por bandeira — valor bruto e líquido após taxas</p></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="abrirModalVendaCartao()"><i class="ti ti-plus"></i>Lançar venda</button>
       <button class="btn btn-ghost" onclick="document.getElementById('csv-cartao-input').click()"><i class="ti ti-upload"></i>Importar CSV</button>
-      <button class="btn btn-ghost" id="btn-toggle-transacoes" onclick="toggleTabelaCartoes()" style="display:none"><i class="ti ti-list"></i>Ver transações detalhadas</button>
-      <button class="btn btn-primary" onclick="abrirModalTaxas()"><i class="ti ti-settings"></i>Configurar taxas</button>
+      <button class="btn btn-ghost" id="btn-toggle-transacoes" onclick="toggleTabelaCartoes()" style="display:none"><i class="ti ti-list"></i>Ver transações</button>
+      <button class="btn btn-ghost" onclick="abrirModalContas()"><i class="ti ti-building-bank"></i>Contas</button>
+      <button class="btn btn-primary" onclick="abrirModalTaxas()"><i class="ti ti-settings"></i>Taxas e contas</button>
     </div>
     <input type="file" id="csv-cartao-input" accept=".csv" style="display:none" onchange="importarCSVCartao(this)">
   </div>
@@ -591,6 +732,17 @@ tbody td{padding:9px 14px;font-size:13px;vertical-align:middle}
 
   <!-- Cards por bandeira -->
   <div id="cartao-bandeiras-cards" style="margin-bottom:14px"></div>
+
+  <!-- PREVISÃO DE CRÉDITO POR CONTA -->
+  <div id="cartao-previsao-wrap" style="display:none;margin-bottom:14px">
+    <div class="sec">
+      <div class="sec-h">
+        <div><div class="sec-t"><i class="ti ti-building-bank" style="margin-right:6px"></i>Previsão de Crédito por Conta Bancária</div>
+        <div class="sec-s">Valores a receber em cada conta, já com as datas de crédito aplicadas</div></div>
+      </div>
+      <div id="cartao-previsao-contas"></div>
+    </div>
+  </div>
 
   <!-- CONCILIAÇÃO DIÁRIA -->
   <div id="cartao-conciliacao-wrap" style="display:none">
@@ -893,6 +1045,280 @@ tbody td{padding:9px 14px;font-size:13px;vertical-align:middle}
   </div>
 </div>
 
+
+<!-- MODAL LANÇAMENTO EM LOTE -->
+<div class="mov" id="m-lote">
+  <div class="modal" style="width:820px;max-width:96vw">
+    <h3><i class="ti ti-checks" style="color:var(--ac)"></i>Revisar e lançar em lote</h3>
+    <div class="modal-sub" id="m-lote-sub">Revise as categorias e confirme o lançamento</div>
+
+    <!-- Ações rápidas -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:12px;color:var(--mu)">Alterar categoria de todos:</span>
+      <select class="fi" id="lote-cat-global" style="width:180px;padding:5px 8px" onchange="aplicarCatGlobal()">
+        <option value="">— selecionar —</option>
+        <option value="receita">Receita</option>
+        <option value="cmv">CMV</option>
+        <option value="comercial">Comercial</option>
+        <option value="administrativo">Administrativo</option>
+        <option value="pessoal">Pessoal</option>
+        <option value="fiscal">Fiscal</option>
+        <option value="financeiro">Financeiro</option>
+        <option value="outro">Outro</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="filtrarLoteEntradas()"><i class="ti ti-arrow-down-circle"></i>Só entradas</button>
+      <button class="btn btn-ghost btn-sm" onclick="filtrarLoteSaidas()"><i class="ti ti-arrow-up-circle"></i>Só saídas</button>
+      <button class="btn btn-ghost btn-sm" onclick="filtrarLoteTodos()"><i class="ti ti-list"></i>Todos</button>
+    </div>
+
+    <!-- Tabela de revisão -->
+    <div style="overflow-y:auto;max-height:420px;border:1px solid var(--b1);border-radius:8px">
+      <table style="width:100%;border-collapse:collapse">
+        <thead style="position:sticky;top:0;z-index:1">
+          <tr>
+            <th style="background:var(--s2);padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--su);text-transform:uppercase;border-bottom:1px solid var(--b1);width:80px">Data</th>
+            <th style="background:var(--s2);padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--su);text-transform:uppercase;border-bottom:1px solid var(--b1)">Descrição</th>
+            <th style="background:var(--s2);padding:8px 10px;text-align:center;font-size:10px;font-weight:600;color:var(--su);text-transform:uppercase;border-bottom:1px solid var(--b1);width:80px">Tipo</th>
+            <th style="background:var(--s2);padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--su);text-transform:uppercase;border-bottom:1px solid var(--b1);width:170px">Categoria</th>
+            <th style="background:var(--s2);padding:8px 10px;text-align:right;font-size:10px;font-weight:600;color:var(--su);text-transform:uppercase;border-bottom:1px solid var(--b1);width:110px">Valor</th>
+            <th style="background:var(--s2);padding:8px 10px;text-align:center;font-size:10px;font-weight:600;color:var(--su);text-transform:uppercase;border-bottom:1px solid var(--b1);width:36px"></th>
+          </tr>
+        </thead>
+        <tbody id="tb-lote"></tbody>
+      </table>
+    </div>
+
+    <!-- Resumo -->
+    <div style="display:flex;gap:16px;margin-top:12px;padding:10px 14px;background:var(--s2);border-radius:8px;font-size:13px;flex-wrap:wrap">
+      <span>Total itens: <strong id="lote-ct-total">0</strong></span>
+      <span style="color:var(--gr)">Entradas: <strong id="lote-val-ent">R$ 0</strong></span>
+      <span style="color:var(--rd)">Saídas: <strong id="lote-val-sai">R$ 0</strong></span>
+      <span style="color:var(--mu);font-size:11px;margin-left:auto">Clique em <i class="ti ti-x"></i> para remover um item do lote sem ignorá-lo</span>
+    </div>
+
+    <div class="mbtns">
+      <button class="btn btn-ghost" onclick="fechM('m-lote')">Cancelar</button>
+      <button class="btn btn-success" onclick="confirmarLote()"><i class="ti ti-checks"></i>Confirmar e lançar tudo</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL CONTAS BANCÁRIAS -->
+<div class="mov" id="m-contas">
+  <div class="modal" style="width:580px">
+    <h3><i class="ti ti-building-bank" style="color:var(--ac)"></i>Contas Bancárias</h3>
+    <div class="modal-sub">Cadastre suas contas e vincule cada bandeira de cartão à conta onde é creditada</div>
+    <div style="margin-bottom:16px">
+      <div class="sec-h" style="margin-bottom:8px"><div class="sec-t" style="font-size:13px">Suas contas</div></div>
+      <div id="lista-contas-cadastradas" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"></div>
+      <div style="display:flex;gap:8px">
+        <input class="fi" type="text" id="nova-conta-nome" placeholder="Nome da conta (ex: BB Conta Corrente)" style="flex:1">
+        <select class="fi" id="nova-conta-banco" style="width:140px">
+          <option value="bb">Banco do Brasil</option>
+          <option value="sicredi">Sicredi</option>
+          <option value="bradesco">Bradesco</option>
+          <option value="itau">Itaú</option>
+          <option value="outro">Outro</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="adicionarConta()"><i class="ti ti-plus"></i>Adicionar</button>
+      </div>
+    </div>
+    <div>
+      <div class="sec-h" style="margin-bottom:8px"><div class="sec-t" style="font-size:13px">Bandeira → Conta de crédito</div></div>
+      <div style="font-size:11px;color:var(--mu);margin-bottom:8px">Indique em qual conta cada bandeira é creditada pela operadora</div>
+      <table style="width:100%;border-collapse:collapse" id="tb-bandeira-conta"></table>
+    </div>
+    <div class="mbtns">
+      <button class="btn btn-ghost" onclick="fechM('m-contas')">Fechar</button>
+      <button class="btn btn-primary" onclick="salvarContas()"><i class="ti ti-device-floppy"></i>Salvar configuração</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TAXAS + CONTA (unificado) -->
+<div class="mov" id="m-taxas-cartao">
+  <div class="modal" style="width:640px">
+    <h3><i class="ti ti-settings" style="color:var(--am)"></i>Taxas de Cartão</h3>
+    <div class="modal-sub">Configure as taxas de cada bandeira e modalidade</div>
+    <div style="overflow-y:auto;max-height:380px">
+      <table style="width:100%">
+        <thead><tr>
+          <th>Bandeira</th>
+          <th>Débito %</th>
+          <th>Créd. 1x %</th>
+          <th>Créd. 2-6x %</th>
+          <th>Créd. 7-12x %</th>
+        </tr></thead>
+        <tbody id="tb-taxas-cartao"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px;font-size:11px;color:var(--mu)">Para vincular bandeiras a contas bancárias, use o botão <strong>Contas</strong> na barra superior.</div>
+    <div class="mbtns">
+      <button class="btn btn-ghost" onclick="fechM('m-taxas-cartao')">Fechar</button>
+      <button class="btn btn-primary" onclick="salvarTaxas()"><i class="ti ti-device-floppy"></i>Salvar taxas</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LANÇAMENTO MANUAL DE VENDA NO CARTÃO -->
+<div class="mov" id="m-venda-cartao">
+  <div class="modal" style="width:560px">
+    <h3><i class="ti ti-credit-card" style="color:var(--gr)"></i>Lançar Venda no Cartão</h3>
+    <div class="modal-sub">Informe os dados da venda e veja o valor líquido calculado automaticamente</div>
+    <div class="fgrid">
+      <div><label class="fl">Data da venda</label><input class="fi" type="date" id="vc-data"></div>
+      <div><label class="fl">Bandeira</label>
+        <select class="fi" id="vc-bandeira" onchange="calcularVendaCartao()">
+          <option value="Visa">Visa</option>
+          <option value="Mastercard">Mastercard</option>
+          <option value="Elo">Elo</option>
+          <option value="Hipercard">Hipercard</option>
+          <option value="Amex">Amex</option>
+          <option value="Cabal">Cabal</option>
+          <option value="Outros">Outros</option>
+        </select>
+      </div>
+      <div><label class="fl">Modalidade</label>
+        <select class="fi" id="vc-modalidade" onchange="calcularVendaCartao()">
+          <option value="debito">Débito</option>
+          <option value="cred1">Crédito à vista (1x)</option>
+          <option value="cred2_6">Crédito parcelado (2-6x)</option>
+          <option value="cred7_12">Crédito parcelado (7-12x)</option>
+        </select>
+      </div>
+      <div><label class="fl">Valor bruto (R$)</label>
+        <input class="fi" type="number" step="0.01" id="vc-valor" placeholder="0,00" oninput="calcularVendaCartao()">
+      </div>
+      <div><label class="fl">Parcelas</label>
+        <input class="fi" type="number" id="vc-parcelas" value="1" min="1" max="12" oninput="calcularVendaCartao()">
+      </div>
+      <div><label class="fl">Observação</label>
+        <input class="fi" type="text" id="vc-obs" placeholder="Opcional">
+      </div>
+    </div>
+
+    <!-- Resultado calculado -->
+    <div id="vc-resultado" style="display:none;margin-top:14px;padding:14px;background:var(--s2);border-radius:10px;border:1px solid var(--b1)">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:10px">
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--mu);margin-bottom:2px">Valor bruto</div>
+          <div style="font-size:16px;font-weight:700" id="vc-res-bruto">R$ 0</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--mu);margin-bottom:2px">Taxa (<span id="vc-res-pct">0</span>%)</div>
+          <div style="font-size:16px;font-weight:700;color:var(--rd)" id="vc-res-taxa">- R$ 0</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--mu);margin-bottom:2px">Valor líquido</div>
+          <div style="font-size:16px;font-weight:700;color:var(--gr)" id="vc-res-liquido">R$ 0</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;font-size:12px;color:var(--mu);flex-wrap:wrap;border-top:1px solid var(--b1);padding-top:8px">
+        <span><i class="ti ti-building-bank"></i> Conta: <strong id="vc-res-conta" style="color:var(--tx)">—</strong></span>
+        <span><i class="ti ti-calendar-check"></i> Previsão de crédito: <strong id="vc-res-data-cred" style="color:var(--ac)">—</strong></span>
+      </div>
+      <div id="vc-res-parcelas-wrap" style="display:none;margin-top:8px;font-size:11px;color:var(--mu);border-top:1px solid var(--b1);padding-top:8px">
+        <div style="font-weight:600;margin-bottom:4px">Parcelas:</div>
+        <div id="vc-res-parcelas-lista"></div>
+      </div>
+    </div>
+
+    <div class="mbtns">
+      <button class="btn btn-ghost" onclick="fechM('m-venda-cartao')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarVendaCartao()"><i class="ti ti-device-floppy"></i>Registrar venda</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DADOS COMPLEMENTARES -->
+<div class="mov" id="m-dados-comp">
+  <div class="modal" style="width:580px">
+    <h3><i class="ti ti-adjustments" style="color:var(--ac)"></i>Dados Complementares</h3>
+    <div class="modal-sub">Informe os valores para cálculo dos indicadores avançados</div>
+    <div class="fgrid">
+      <div><label class="fl">Patrimônio Líquido (R$)</label><input class="fi" type="number" step="0.01" id="dc-pl" placeholder="Do balanço do contador"></div>
+      <div><label class="fl">Ativo Total (R$)</label><input class="fi" type="number" step="0.01" id="dc-ativo" placeholder="Total de bens da empresa"></div>
+      <div><label class="fl">Estoque (R$)</label><input class="fi" type="number" step="0.01" id="dc-estoque" placeholder="Valor do estoque atual"></div>
+      <div><label class="fl">Contas a receber (R$)</label><input class="fi" type="number" step="0.01" id="dc-ar" placeholder="Clientes em aberto"></div>
+      <div><label class="fl">Contas a pagar (R$)</label><input class="fi" type="number" step="0.01" id="dc-ap" placeholder="Fornecedores em aberto"></div>
+      <div><label class="fl">Depreciação mensal (R$)</label><input class="fi" type="number" step="0.01" id="dc-depre" placeholder="Ex: 2500"></div>
+      <div><label class="fl">Amortização mensal (R$)</label><input class="fi" type="number" step="0.01" id="dc-amort" placeholder="Ex: 800"></div>
+      <div><label class="fl">Prazo médio recebimento (dias)</label><input class="fi" type="number" id="dc-pmr" placeholder="Ex: 30"></div>
+      <div><label class="fl">Prazo médio pagamento (dias)</label><input class="fi" type="number" id="dc-pmp" placeholder="Ex: 28"></div>
+      <div><label class="fl">Prazo médio estoque (dias)</label><input class="fi" type="number" id="dc-pme" placeholder="Ex: 45"></div>
+    </div>
+    <div class="mbtns">
+      <button class="btn btn-ghost" onclick="fechM('m-dados-comp')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarDadosComp()"><i class="ti ti-device-floppy"></i>Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EMPRÉSTIMO -->
+<div class="mov" id="m-emprestimo">
+  <div class="modal" style="width:620px">
+    <h3><i class="ti ti-file-invoice" style="color:var(--am)"></i>Contrato de Empréstimo</h3>
+    <div class="modal-sub">Cadastre os dados do contrato para acompanhamento</div>
+    <input type="hidden" id="emp-edit-id">
+    <div class="fgrid">
+      <div class="full"><label class="fl">Nome / Identificação do contrato</label><input class="fi" type="text" id="emp-nome" placeholder="Ex: Capital de Giro BB — Mai/2026"></div>
+      <div><label class="fl">Tipo de operação</label>
+        <select class="fi" id="emp-tipo">
+          <option value="capital_giro">Capital de Giro</option>
+          <option value="pronampe">PRONAMPE</option>
+          <option value="financiamento">Financiamento</option>
+          <option value="antecipacao">Antecipação de recebíveis</option>
+          <option value="conta_garantida">Conta Garantida</option>
+          <option value="credito_rural">Crédito Rural</option>
+          <option value="outros">Outros</option>
+        </select>
+      </div>
+      <div><label class="fl">Instituição</label>
+        <select class="fi" id="emp-inst">
+          <option value="bb">Banco do Brasil</option>
+          <option value="sicredi">Sicredi</option>
+          <option value="bradesco">Bradesco</option>
+          <option value="itau">Itaú</option>
+          <option value="caixa">Caixa Econômica</option>
+          <option value="bndes">BNDES</option>
+          <option value="outro">Outro</option>
+        </select>
+      </div>
+      <div><label class="fl">Data de início</label><input class="fi" type="date" id="emp-inicio"></div>
+      <div><label class="fl">Total de parcelas</label><input class="fi" type="number" id="emp-parcelas" min="1" placeholder="Ex: 24" oninput="calcularEmprestimo()"></div>
+      <div><label class="fl">Valor da parcela (R$)</label><input class="fi" type="number" step="0.01" id="emp-vlr-parcela" placeholder="Ex: 3500,00" oninput="calcularEmprestimo()"></div>
+      <div><label class="fl">Dia de débito (todo mês)</label><input class="fi" type="number" id="emp-dia-debito" min="1" max="31" placeholder="Ex: 10"></div>
+      <div><label class="fl">Taxa de juros (% a.m.)</label><input class="fi" type="number" step="0.001" id="emp-taxa" placeholder="Ex: 1.85" oninput="calcularEmprestimo()"></div>
+      <div><label class="fl">Parcelas já pagas</label><input class="fi" type="number" id="emp-pagas" value="0" min="0" oninput="calcularEmprestimo()"></div>
+      <div class="full"><label class="fl">Custos atrelados ao contrato (IOF, TAC, seguros, etc.)</label><input class="fi" type="text" id="emp-custos-desc" placeholder="Ex: IOF R$ 1.200, TAC R$ 500, Seguro R$ 80/mês"></div>
+      <div><label class="fl">Custo total do contrato (R$)</label><input class="fi" type="number" step="0.01" id="emp-custo-total" placeholder="Ex: 1780"></div>
+      <div><label class="fl">Status</label>
+        <select class="fi" id="emp-status">
+          <option value="ativo">Ativo</option>
+          <option value="quitado">Quitado</option>
+          <option value="renegociado">Renegociado</option>
+        </select>
+      </div>
+    </div>
+    <!-- Preview do contrato -->
+    <div id="emp-preview" style="display:none;margin-top:14px;padding:12px;background:var(--s2);border-radius:8px;border:1px solid var(--b1)">
+      <div style="font-size:11px;font-weight:600;color:var(--mu);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Resumo do contrato</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px">
+        <div><div style="color:var(--mu);font-size:10px">Valor financiado</div><div style="font-weight:600" id="emp-prev-total">—</div></div>
+        <div><div style="color:var(--mu);font-size:10px">Saldo devedor</div><div style="font-weight:600;color:var(--rd)" id="emp-prev-saldo">—</div></div>
+        <div><div style="color:var(--mu);font-size:10px">Parcelas restantes</div><div style="font-weight:600;color:var(--am)" id="emp-prev-rest">—</div></div>
+        <div><div style="color:var(--mu);font-size:10px">Custo efetivo total</div><div style="font-weight:600;color:var(--rd)" id="emp-prev-cet">—</div></div>
+        <div><div style="color:var(--mu);font-size:10px">Próximo débito</div><div style="font-weight:600;color:var(--ac)" id="emp-prev-prox">—</div></div>
+        <div><div style="color:var(--mu);font-size:10px">Término previsto</div><div style="font-weight:600" id="emp-prev-fim">—</div></div>
+      </div>
+    </div>
+    <div class="mbtns">
+      <button class="btn btn-ghost" onclick="fechM('m-emprestimo')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarEmprestimo()"><i class="ti ti-device-floppy"></i>Salvar contrato</button>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"><i class="ti ti-check" id="tic"></i><span id="tmsg"></span></div>
 
@@ -1722,7 +2148,7 @@ function setMod(m, el) {
   if(el) el.classList.add('on');
   if(m==='dre') renderDRE();
   if(m==='fluxo') { renderGraficoFluxo(); renderFluxo(); }
-  if(m==='indicadores') { renderGraficoEvolucao(); }
+  if(m==='indicadores') { renderGraficoEvolucao(); renderIndicadoresCompleto(); }
   if(m==='faturamento') { renderFatDiario(); }
   if(m==='fornecedores') { renderFornecedores(); }
   if(m==='cartoes') { renderCartoes(); }
@@ -1799,6 +2225,12 @@ function mostrarApp() {
   document.getElementById('app').style.display = 'flex';
   carregarDados();
   iniciarRealtimeSb();
+  iniciarRealtimeCompleto();
+  carregarTodasConfigs().then(function(){
+    carregarFatDiarioSb();
+    carregarFornecedoresSb();
+    carregarEmprestimosSb().then(function(){ renderIndicadoresCompleto(); });
+  });
 }
 
 async function fazerLogout() {
@@ -1942,6 +2374,7 @@ function salvarFatDiario() {
       });
     }
   }
+  salvarFatDiarioSb(newItem || FAT_DIARIO.find(function(f){return f.id==(editId||'');}));
   ls('fat_diario_'+mesSel, FAT_DIARIO);
   renderFatDiario();
   fechM('m-fat-diario');
@@ -1951,7 +2384,7 @@ function salvarFatDiario() {
 function excluirFatDiario(id) {
   if (!confirm('Excluir este lançamento?')) return;
   FAT_DIARIO = FAT_DIARIO.filter(function(f){ return f.id!==id; });
-  if (sbOn && sbClient && typeof id==='number') sbClient.from('faturamento_diario').delete().eq('id',id);
+  excluirFatDiarioSb(id);
   ls('fat_diario_'+mesSel, FAT_DIARIO);
   renderFatDiario();
   toast('Excluído!', true);
@@ -2128,6 +2561,7 @@ function salvarFornecedor() {
       });
     }
   }
+  salvarFornecedorSb(FORNECEDORES.find(function(f){return f.id==(editId||newItem&&newItem.id);})||FORNECEDORES[FORNECEDORES.length-1]);
   ls('fornecedores', FORNECEDORES);
   renderFornecedores();
   fechM('m-fornecedor');
@@ -2140,7 +2574,7 @@ function marcarPago(id) {
     FORNECEDORES[idx].status = 'pago';
     FORNECEDORES[idx].pgto_data = new Date().toISOString().split('T')[0];
     var item = FORNECEDORES[idx];
-    if (sbOn && sbClient && typeof id==='number') sbClient.from('pagamentos_fornecedores').update({status:'pago', pgto_data:item.pgto_data}).eq('id',id);
+    salvarFornecedorSb(item);
     ls('fornecedores', FORNECEDORES);
     renderFornecedores();
     toast('Marcado como pago!', true);
@@ -2150,7 +2584,7 @@ function marcarPago(id) {
 function excluirFornecedor(id) {
   if (!confirm('Excluir este pagamento?')) return;
   FORNECEDORES = FORNECEDORES.filter(function(f){ return f.id!==id && f.id!=id; });
-  if (sbOn && sbClient && typeof id==='number') sbClient.from('pagamentos_fornecedores').delete().eq('id',id);
+  excluirFornecedorSb(id);
   ls('fornecedores', FORNECEDORES);
   renderFornecedores();
   toast('Excluído!', true);
@@ -2649,6 +3083,8 @@ function renderCartoes() {
           '<td style="padding:10px 8px;text-align:right;font-size:14px;font-weight:700;color:var(--gr);border-top:2px solid var(--b2)">'+R(totalLiq)+'</td>';
   html += '</tr></tbody></table></div>';
 
+  renderPrevisaoContas();
+
   var concEl = document.getElementById('tb-conciliacao-diaria');
   if (concEl) concEl.innerHTML = html;
 
@@ -2746,7 +3182,7 @@ function salvarTaxas() {
     t.cred2_6  = parseFloat(document.getElementById('tx-c26-'+i).value)||t.cred2_6;
     t.cred7_12 = parseFloat(document.getElementById('tx-c712-'+i).value)||t.cred7_12;
   });
-  ls('taxas_cartao', TAXAS_CARTAO);
+  salvarConfig('taxas_cartao', TAXAS_CARTAO);
   // Recalcular transações com novas taxas
   TRANSACOES_CARTAO.forEach(function(t){
     t.taxa = getTaxa(t.bandeira, t.modalidade);
@@ -3399,26 +3835,108 @@ function confirmarLancamentoExtrato() {
   toast('Lançado no financeiro!', true);
 }
 
+// Itens sendo revisados no modal de lote
+var LOTE_ITENS = [];
+
 function lancarSelecionados() {
   var selecionados = EXTRATO_ITENS.filter(function(it){ return it._selecionado && it.status==='pendente'; });
-  if (!selecionados.length) { toast('Nenhum item selecionado.', false); return; }
-  if (!confirm('Lançar ' + selecionados.length + ' item(s) no financeiro usando a categoria sugerida?')) return;
+  if (!selecionados.length) { toast('Selecione ao menos um item.', false); return; }
 
-  selecionados.forEach(function(it) {
-    var tipo = it.tipo === 'entrada' ? 'receita' : 'despesa';
-    var cat  = tipo === 'receita' ? 'receita' : (it.cat || 'outro');
-    var lanc = { id: gerarId(), tipo:tipo, data:it.data, desc:it.desc, cat:cat, valor:it.valor, recor:'nao', obs:'Importado do extrato — '+it.banco };
+  // Clonar para o lote (para poder remover sem afetar a lista principal)
+  LOTE_ITENS = selecionados.map(function(it){ return Object.assign({}, it, {_loteRem: false}); });
+  abrirModalLote();
+}
+
+function abrirModalLote(filtro) {
+  var CAT_LABELS = { receita:'Receita', cmv:'CMV', comercial:'Comercial', administrativo:'Administrativo', pessoal:'Pessoal', fiscal:'Fiscal', financeiro:'Financeiro', outro:'Outro' };
+  var lista = LOTE_ITENS.filter(function(it){ return !it._loteRem && (!filtro || it.tipo === filtro); });
+
+  var totalEnt = 0, totalSai = 0;
+  LOTE_ITENS.filter(function(it){ return !it._loteRem; }).forEach(function(it){
+    if (it.tipo === 'entrada') totalEnt += it.valor; else totalSai += it.valor;
+  });
+  var ct = LOTE_ITENS.filter(function(it){ return !it._loteRem; }).length;
+
+  setText('lote-ct-total', ct);
+  setText('lote-val-ent', R(totalEnt));
+  setText('lote-val-sai', R(totalSai));
+  setText('m-lote-sub', ct + ' lançamentos selecionados — revise as categorias antes de confirmar');
+
+  var tb = document.getElementById('tb-lote');
+  if (!tb) return;
+
+  if (!lista.length) {
+    tb.innerHTML = '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--mu)">Nenhum item '+(filtro?'neste filtro':'no lote')+'.</td></tr>';
+  } else {
+    tb.innerHTML = lista.map(function(it){
+      var realIdx = LOTE_ITENS.indexOf(it);
+      var corVal  = it.tipo === 'entrada' ? 'var(--gr)' : 'var(--rd)';
+      var sinal   = it.tipo === 'entrada' ? '+' : '-';
+      var tipoPill = it.tipo === 'entrada'
+        ? '<span class="pill p-gr" style="font-size:10px"><i class="ti ti-arrow-down-circle"></i> Entrada</span>'
+        : '<span class="pill p-rd" style="font-size:10px"><i class="ti ti-arrow-up-circle"></i> Saída</span>';
+
+      return '<tr id="lote-row-'+realIdx+'" style="border-bottom:1px solid var(--b1)">'+
+        '<td style="padding:7px 10px;font-size:11px;color:var(--mu);white-space:nowrap">'+fmtData(it.data)+'</td>'+
+        '<td style="padding:7px 10px;font-size:12px;max-width:220px">'+
+          '<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="'+it.desc+'">'+it.desc+'</div>'+
+        '</td>'+
+        '<td style="padding:7px 10px;text-align:center">'+tipoPill+'</td>'+
+        '<td style="padding:7px 6px">'+
+          '<select class="fi" style="padding:4px 6px;font-size:11px;width:100%" onchange="LOTE_ITENS['+realIdx+'].cat=this.value">'+
+            Object.keys(CAT_LABELS).map(function(k){
+              return '<option value="'+k+'"'+(it.cat===k?' selected':'')+'>'+CAT_LABELS[k]+'</option>';
+            }).join('')+
+          '</select>'+
+        '</td>'+
+        '<td style="padding:7px 10px;text-align:right;font-weight:600;color:'+corVal+';white-space:nowrap">'+sinal+R(it.valor)+'</td>'+
+        '<td style="padding:7px 6px;text-align:center">'+
+          '<button onclick="removerDoLote('+realIdx+')" style="background:none;border:none;color:var(--mu);cursor:pointer;padding:2px 6px;border-radius:4px" title="Remover do lote" onmouseover="this.style.color=\'var(--rd)\'" onmouseout="this.style.color=\'var(--mu)\'"><i class="ti ti-x"></i></button>'+
+        '</td>'+
+      '</tr>';
+    }).join('');
+  }
+
+  document.getElementById('lote-cat-global').value = '';
+  abrM('m-lote');
+}
+
+function removerDoLote(idx) {
+  LOTE_ITENS[idx]._loteRem = true;
+  abrirModalLote();
+}
+
+function aplicarCatGlobal() {
+  var cat = document.getElementById('lote-cat-global').value;
+  if (!cat) return;
+  LOTE_ITENS.forEach(function(it){ if (!it._loteRem) it.cat = cat; });
+  abrirModalLote();
+}
+
+function filtrarLoteEntradas() { abrirModalLote('entrada'); }
+function filtrarLoteSaidas()   { abrirModalLote('saida');   }
+function filtrarLoteTodos()    { abrirModalLote();           }
+
+function confirmarLote() {
+  var ativos = LOTE_ITENS.filter(function(it){ return !it._loteRem; });
+  if (!ativos.length) { toast('Nenhum item no lote.', false); return; }
+
+  ativos.forEach(function(loteItem) {
+    var it   = EXTRATO_ITENS.find(function(e){ return e === EXTRATO_ITENS[EXTRATO_ITENS.indexOf(e)] && e.data === loteItem.data && e.desc === loteItem.desc && e.valor === loteItem.valor && e.status === 'pendente'; });
+    var tipo = loteItem.tipo === 'entrada' ? 'receita' : 'despesa';
+    var cat  = tipo === 'receita' ? 'receita' : (loteItem.cat || 'outro');
+    var lanc = { id: gerarId(), tipo:tipo, data:loteItem.data, desc:loteItem.desc, cat:cat, valor:loteItem.valor, recor:'nao', obs:'Extrato — '+loteItem.banco };
     LANCAMENTOS.push(lanc);
     salvarNoSupabase(lanc);
-    it.status = 'lancado';
-    it._selecionado = false;
-    it._lancId = lanc.id;
+    if (it) { it.status = 'lancado'; it._selecionado = false; it._lancId = lanc.id; }
   });
 
   salvarDados();
   calcularTudo();
+  LOTE_ITENS = [];
+  fechM('m-lote');
   renderExtrato();
-  toast(selecionados.length + ' lançamentos criados!', true);
+  toast(ativos.length + ' lançamentos criados com sucesso!', true);
 }
 
 function ignorarItemExtrato() {
@@ -3448,6 +3966,841 @@ function estornarExtrato(idx) {
 function reativarExtrato(idx) {
   if (EXTRATO_ITENS[idx]) { EXTRATO_ITENS[idx].status = 'pendente'; EXTRATO_ITENS[idx]._selecionado = false; }
   renderExtrato();
+}
+
+// ════════════════════════════════════════════════
+// CONTAS BANCÁRIAS E VINCULAÇÃO BANDEIRA → CONTA
+// ════════════════════════════════════════════════
+
+var CONTAS_DEFAULT = [
+  { id:'bb',       nome:'Banco do Brasil',  banco:'bb'       },
+  { id:'sicredi',  nome:'Sicredi',          banco:'sicredi'  },
+  { id:'bradesco', nome:'Bradesco',         banco:'bradesco' },
+  { id:'itau',     nome:'Itaú',             banco:'itau'     },
+];
+
+var CONTAS = ls('contas_bancarias') || JSON.parse(JSON.stringify(CONTAS_DEFAULT));
+
+// Bandeira → conta padrão (Mastercard → Bradesco, demais → BB)
+var BANDEIRA_CONTA_DEFAULT = {
+  Visa:'bb', Mastercard:'bradesco', Elo:'bb',
+  Hipercard:'bb', Amex:'bb', Cabal:'bb', Outros:'bb'
+};
+var BANDEIRA_CONTA = ls('bandeira_conta') || JSON.parse(JSON.stringify(BANDEIRA_CONTA_DEFAULT));
+
+// Prazo de crédito em dias úteis (simplificado como dias corridos)
+var PRAZO_CREDITO = { debito:1, cred1:1, cred2_6:30, cred7_12:30 };
+
+function getNomeConta(id) {
+  var c = CONTAS.find(function(c){ return c.id === id; });
+  return c ? c.nome : id || '—';
+}
+
+function addDiasUteis(dataISO, dias) {
+  var d = new Date(dataISO + 'T12:00:00');
+  d.setDate(d.getDate() + dias);
+  return d.toISOString().split('T')[0];
+}
+
+// ── MODAL CONTAS ──
+function abrirModalContas() {
+  renderListaContas();
+  renderTabelaBandeiraConta();
+  abrM('m-contas');
+}
+
+function renderListaContas() {
+  var el = document.getElementById('lista-contas-cadastradas');
+  if (!el) return;
+  el.innerHTML = CONTAS.map(function(c, i){
+    var BANCO_LABELS = { bb:'Banco do Brasil', sicredi:'Sicredi', bradesco:'Bradesco', itau:'Itaú', outro:'Outro' };
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--s2);border-radius:6px;border:1px solid var(--b1)">'+
+      '<i class="ti ti-building-bank" style="color:var(--ac)"></i>'+
+      '<span style="flex:1;font-size:13px;font-weight:500">'+c.nome+'</span>'+
+      '<span class="pill p-mu" style="font-size:10px">'+( BANCO_LABELS[c.banco]||c.banco )+'</span>'+
+      (CONTAS_DEFAULT.some(function(d){ return d.id===c.id; })
+        ? ''
+        : '<button onclick="removerConta(\''+c.id+'\')" style="background:none;border:none;color:var(--mu);cursor:pointer"><i class="ti ti-trash"></i></button>')+
+    '</div>';
+  }).join('') || '<div style="color:var(--mu);font-size:12px;padding:8px">Nenhuma conta cadastrada.</div>';
+}
+
+function adicionarConta() {
+  var nome  = (document.getElementById('nova-conta-nome').value||'').trim();
+  var banco = document.getElementById('nova-conta-banco').value;
+  if (!nome) { toast('Informe o nome da conta.', false); return; }
+  var id = 'conta_' + Date.now();
+  CONTAS.push({ id:id, nome:nome, banco:banco });
+  document.getElementById('nova-conta-nome').value = '';
+  renderListaContas();
+  renderTabelaBandeiraConta();
+}
+
+function removerConta(id) {
+  CONTAS = CONTAS.filter(function(c){ return c.id !== id; });
+  // Limpar vínculos que usavam essa conta
+  Object.keys(BANDEIRA_CONTA).forEach(function(b){
+    if (BANDEIRA_CONTA[b] === id) BANDEIRA_CONTA[b] = 'bb';
+  });
+  renderListaContas();
+  renderTabelaBandeiraConta();
+}
+
+function renderTabelaBandeiraConta() {
+  var tb = document.getElementById('tb-bandeira-conta');
+  if (!tb) return;
+  var bandeiras = ['Visa','Mastercard','Elo','Hipercard','Amex','Cabal','Outros'];
+  var opts = CONTAS.map(function(c){ return '<option value="'+c.id+'">'+c.nome+'</option>'; }).join('');
+  tb.innerHTML = '<thead><tr><th style="padding:6px 10px;font-size:11px;color:var(--su);text-align:left">Bandeira</th><th style="padding:6px 10px;font-size:11px;color:var(--su);text-align:left">Conta de crédito</th><th style="padding:6px 10px;font-size:11px;color:var(--su);text-align:left">Prazo débito</th><th style="padding:6px 10px;font-size:11px;color:var(--su);text-align:left">Prazo crédito 1x</th></tr></thead>'+
+    '<tbody>'+bandeiras.map(function(b){
+      var cor = BANDEIRA_COLORS[b]||'#6b7394';
+      var contaAtual = BANDEIRA_CONTA[b] || 'bb';
+      return '<tr style="border-bottom:1px solid var(--b1)">'+
+        '<td style="padding:7px 10px"><span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:'+cor+';display:inline-block"></span><strong style="font-size:13px">'+b+'</strong></span></td>'+
+        '<td style="padding:7px 10px"><select class="fi" id="bc-conta-'+b+'" style="padding:4px 8px;font-size:12px">'+
+          opts.replace('value="'+contaAtual+'"', 'value="'+contaAtual+'" selected')+
+        '</select></td>'+
+        '<td style="padding:7px 10px"><input class="fi" type="number" id="bc-prazo-deb-'+b+'" value="'+(PRAZO_CREDITO['deb_'+b]||1)+'" min="0" max="30" style="width:60px;padding:4px 8px;font-size:12px"> dias</td>'+
+        '<td style="padding:7px 10px"><input class="fi" type="number" id="bc-prazo-c1-'+b+'" value="'+(PRAZO_CREDITO['c1_'+b]||1)+'" min="0" max="30" style="width:60px;padding:4px 8px;font-size:12px"> dias</td>'+
+      '</tr>';
+    }).join('')+'</tbody>';
+}
+
+function salvarContas() {
+  var bandeiras = ['Visa','Mastercard','Elo','Hipercard','Amex','Cabal','Outros'];
+  bandeiras.forEach(function(b){
+    var sel = document.getElementById('bc-conta-'+b);
+    var pd  = document.getElementById('bc-prazo-deb-'+b);
+    var pc1 = document.getElementById('bc-prazo-c1-'+b);
+    if (sel) BANDEIRA_CONTA[b] = sel.value;
+    if (pd)  PRAZO_CREDITO['deb_'+b] = parseInt(pd.value)||1;
+    if (pc1) PRAZO_CREDITO['c1_'+b]  = parseInt(pc1.value)||1;
+  });
+  salvarConfig('contas_bancarias', CONTAS);
+  salvarConfig('bandeira_conta', BANDEIRA_CONTA);
+  salvarConfig('prazo_credito', PRAZO_CREDITO);
+  renderCartoes();
+  fechM('m-contas');
+  toast('Contas e prazos salvos!', true);
+}
+
+// ── LANÇAMENTO MANUAL DE VENDA NO CARTÃO ──
+var VENDAS_CARTAO = ls('vendas_cartao') || [];
+
+function abrirModalVendaCartao() {
+  document.getElementById('vc-data').value = new Date().toISOString().split('T')[0];
+  document.getElementById('vc-bandeira').value = 'Visa';
+  document.getElementById('vc-modalidade').value = 'debito';
+  document.getElementById('vc-valor').value = '';
+  document.getElementById('vc-parcelas').value = '1';
+  document.getElementById('vc-obs').value = '';
+  document.getElementById('vc-resultado').style.display = 'none';
+  abrM('m-venda-cartao');
+}
+
+function calcularVendaCartao() {
+  var valor     = parseFloat(document.getElementById('vc-valor').value)||0;
+  var bandeira  = document.getElementById('vc-bandeira').value;
+  var modalidade= document.getElementById('vc-modalidade').value;
+  var parcelas  = parseInt(document.getElementById('vc-parcelas').value)||1;
+  var data      = document.getElementById('vc-data').value;
+
+  if (valor <= 0 || !data) { document.getElementById('vc-resultado').style.display='none'; return; }
+
+  var taxa    = getTaxa(bandeira, modalidade);
+  var liquido = valor * (1 - taxa/100);
+  var taxaVal = valor - liquido;
+
+  // Conta destino
+  var contaId   = BANDEIRA_CONTA[bandeira] || 'bb';
+  var contaNome = getNomeConta(contaId);
+
+  // Data de crédito
+  var prazo = modalidade === 'debito'
+    ? (PRAZO_CREDITO['deb_'+bandeira] || 1)
+    : (PRAZO_CREDITO['c1_'+bandeira]  || 1);
+  var dataCredito = addDiasUteis(data, prazo);
+  var dataCreditoExib = fmtData(dataCredito);
+
+  // Atualizar tela
+  setText('vc-res-bruto',   R(valor));
+  setText('vc-res-pct',     taxa.toFixed(2));
+  setText('vc-res-taxa',    '- '+R(taxaVal));
+  setText('vc-res-liquido', R(liquido));
+  setText('vc-res-conta',   contaNome);
+  setText('vc-res-data-cred', dataCreditoExib);
+
+  // Parcelas (crédito parcelado)
+  var parcWrap = document.getElementById('vc-res-parcelas-wrap');
+  var parcLista = document.getElementById('vc-res-parcelas-lista');
+  if (modalidade === 'cred2_6' || modalidade === 'cred7_12') {
+    parcWrap.style.display = 'block';
+    var vlrParc = liquido / parcelas;
+    var itens = [];
+    for (var p = 1; p <= parcelas; p++) {
+      var d = addDiasUteis(data, p * 30);
+      itens.push('<span style="display:inline-block;margin:2px 6px 2px 0;padding:2px 8px;background:var(--s3);border-radius:4px;font-size:11px">'+p+'x: '+R(vlrParc)+' em '+fmtData(d)+'</span>');
+    }
+    parcLista.innerHTML = itens.join('');
+  } else {
+    parcWrap.style.display = 'none';
+  }
+
+  document.getElementById('vc-resultado').style.display = 'block';
+}
+
+function salvarVendaCartao() {
+  var valor     = parseFloat(document.getElementById('vc-valor').value)||0;
+  var bandeira  = document.getElementById('vc-bandeira').value;
+  var modalidade= document.getElementById('vc-modalidade').value;
+  var parcelas  = parseInt(document.getElementById('vc-parcelas').value)||1;
+  var data      = document.getElementById('vc-data').value;
+  var obs       = document.getElementById('vc-obs').value.trim();
+
+  if (!valor || valor<=0) { toast('Informe o valor da venda.', false); return; }
+  if (!data) { toast('Informe a data.', false); return; }
+
+  var taxa      = getTaxa(bandeira, modalidade);
+  var liquido   = valor * (1 - taxa/100);
+  var contaId   = BANDEIRA_CONTA[bandeira] || 'bb';
+  var prazo     = modalidade === 'debito' ? (PRAZO_CREDITO['deb_'+bandeira]||1) : (PRAZO_CREDITO['c1_'+bandeira]||1);
+  var dataCredito = addDiasUteis(data, prazo);
+
+  var venda = {
+    id: gerarId(), data:data, bandeira:bandeira, modalidade:modalidade,
+    parcelas:parcelas, bruto:valor, taxa:taxa, liquido:liquido,
+    contaId:contaId, dataCredito:dataCredito, obs:obs,
+    hora: new Date().toTimeString().slice(0,5)
+  };
+  VENDAS_CARTAO.push(venda);
+  ls('vendas_cartao', VENDAS_CARTAO);
+  salvarVendaCartaoSb(venda);
+
+  // Adicionar às transações de cartão para aparecer na conciliação
+  TRANSACOES_CARTAO.push({
+    data: data, hora: venda.hora, bandeira:bandeira,
+    modalidade:modalidade, forma: MOD_LABELS[modalidade]||modalidade,
+    nsu:'manual', bruto:valor, taxaValor:valor-liquido,
+    taxa:taxa, liquido:liquido, _manual:true
+  });
+
+  renderCartoes();
+  fechM('m-venda-cartao');
+  toast('Venda registrada! Líquido: '+R(liquido)+' → '+getNomeConta(contaId), true);
+}
+
+// ── PREVISÃO DE CRÉDITO POR CONTA ──
+function renderPrevisaoContas() {
+  var wrap = document.getElementById('cartao-previsao-wrap');
+  var el   = document.getElementById('cartao-previsao-contas');
+  if (!el || !TRANSACOES_CARTAO.length) { if (wrap) wrap.style.display='none'; return; }
+  if (wrap) wrap.style.display = 'block';
+
+  // Agrupar por conta → data de crédito
+  var por_conta = {};
+  TRANSACOES_CARTAO.forEach(function(t){
+    var contaId = BANDEIRA_CONTA[t.bandeira] || 'bb';
+    var prazo   = t.modalidade === 'debito'
+      ? (PRAZO_CREDITO['deb_'+t.bandeira]||1)
+      : (PRAZO_CREDITO['c1_'+t.bandeira]||1);
+    var dataCred = addDiasUteis(t.data.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1'), prazo);
+    if (!por_conta[contaId]) por_conta[contaId] = { total:0, hoje:0, amanha:0, itens:[] };
+    por_conta[contaId].total   += t.liquido;
+    por_conta[contaId].itens.push({ data:dataCred, bandeira:t.bandeira, liquido:t.liquido });
+  });
+
+  var hoje   = new Date().toISOString().split('T')[0];
+  var amanha = addDiasUteis(hoje, 1);
+
+  el.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px">'+
+    Object.keys(por_conta).map(function(cId){
+      var d = por_conta[cId];
+      var conta = CONTAS.find(function(c){ return c.id===cId; }) || { nome: getNomeConta(cId) };
+      var credHoje   = d.itens.filter(function(i){ return i.data===hoje;   }).reduce(function(s,i){ return s+i.liquido; },0);
+      var credAmanha = d.itens.filter(function(i){ return i.data===amanha; }).reduce(function(s,i){ return s+i.liquido; },0);
+      return '<div class="card" style="border-top:3px solid var(--ac)">'+
+        '<div class="card-top"><i class="ti ti-building-bank"></i>'+conta.nome+'</div>'+
+        '<div class="card-val vac">'+R(d.total)+'</div>'+
+        '<div class="card-sub">Total a receber</div>'+
+        (credHoje   ? '<div style="margin-top:6px;font-size:11px;color:var(--gr)"><i class="ti ti-check"></i> Hoje: <strong>'+R(credHoje)+'</strong></div>' : '')+
+        (credAmanha ? '<div style="font-size:11px;color:var(--am)"><i class="ti ti-clock"></i> Amanhã: <strong>'+R(credAmanha)+'</strong></div>' : '')+
+        '<div style="font-size:10px;color:var(--mu);margin-top:4px">'+d.itens.length+' transações</div>'+
+      '</div>';
+    }).join('')+
+  '</div>';
+}
+
+// ════════════════════════════════════════════════
+// INDICADORES AVANÇADOS — EBITDA, ROCE, CAPITAL DE GIRO, SAÚDE
+// ════════════════════════════════════════════════
+
+var DADOS_COMP_DEFAULT = { pl:0, ativo:0, estoque:0, ar:0, ap:0, depre:0, amort:0, pmr:30, pmp:28, pme:45 };
+var DADOS_COMP = ls('dados_complementares') || Object.assign({}, DADOS_COMP_DEFAULT);
+var EMPRESTIMOS = ls('emprestimos') || [];
+
+function abrirModalDadosComplementares() {
+  Object.keys(DADOS_COMP_DEFAULT).forEach(function(k){
+    var el = document.getElementById('dc-'+k);
+    if (el) el.value = DADOS_COMP[k] || '';
+  });
+  abrM('m-dados-comp');
+}
+
+function salvarDadosComp() {
+  Object.keys(DADOS_COMP_DEFAULT).forEach(function(k){
+    var el = document.getElementById('dc-'+k);
+    if (el) DADOS_COMP[k] = parseFloat(el.value)||0;
+  });
+  salvarConfig('dados_complementares', DADOS_COMP);
+  fechM('m-dados-comp');
+  renderIndicadoresCompleto();
+  toast('Dados salvos! Indicadores recalculados.', true);
+}
+
+// ── CAPITAL DE GIRO via CSV do ERP ──
+function importarCapitalGiro(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var linhas = e.target.result.split(/\r?\n/).filter(function(l){ return l.trim(); });
+    var sep = linhas[0].indexOf(';') > -1 ? ';' : ',';
+    var headers = linhas[0].split(sep).map(function(h){ return h.toLowerCase().replace(/['"]/g,'').trim(); });
+
+    function getVal(row, keywords) {
+      var idx = headers.findIndex(function(h){ return keywords.some(function(k){ return h.indexOf(k)>-1; }); });
+      if (idx > -1) {
+        var v = (row[idx]||'').replace(/[R$\s"]/g,'').replace(/\./g,'').replace(',','.');
+        return Math.abs(parseFloat(v)||0);
+      }
+      return 0;
+    }
+
+    for (var i = 1; i < linhas.length; i++) {
+      var row = linhas[i].split(sep);
+      var est = getVal(row, ['estoque','stock','mercadoria']);
+      var ar  = getVal(row, ['receber','receivable','clientes','duplicata']);
+      var ap  = getVal(row, ['pagar','payable','fornecedor','duplicata pagar']);
+      if (est) DADOS_COMP.estoque = est;
+      if (ar)  DADOS_COMP.ar = ar;
+      if (ap)  DADOS_COMP.ap = ap;
+    }
+    ls('dados_complementares', DADOS_COMP);
+    renderIndicadoresCompleto();
+    input.value = '';
+    toast('Capital de giro importado do ERP!', true);
+  };
+  reader.readAsText(file, 'ISO-8859-1');
+}
+
+// ── EMPRÉSTIMOS ──
+function abrirModalEmprestimo(id) {
+  if (id) {
+    var emp = EMPRESTIMOS.find(function(e){ return e.id===id; });
+    if (emp) {
+      document.getElementById('emp-edit-id').value = emp.id;
+      document.getElementById('emp-nome').value = emp.nome;
+      document.getElementById('emp-tipo').value = emp.tipo;
+      document.getElementById('emp-inst').value = emp.inst;
+      document.getElementById('emp-inicio').value = emp.inicio;
+      document.getElementById('emp-parcelas').value = emp.parcelas;
+      document.getElementById('emp-vlr-parcela').value = emp.vlrParcela;
+      document.getElementById('emp-dia-debito').value = emp.diaDebito;
+      document.getElementById('emp-taxa').value = emp.taxa;
+      document.getElementById('emp-pagas').value = emp.pagas;
+      document.getElementById('emp-custos-desc').value = emp.custosDesc||'';
+      document.getElementById('emp-custo-total').value = emp.custoTotal||0;
+      document.getElementById('emp-status').value = emp.status||'ativo';
+    }
+  } else {
+    document.getElementById('emp-edit-id').value = '';
+    ['emp-nome','emp-custos-desc'].forEach(function(id){ document.getElementById(id).value=''; });
+    document.getElementById('emp-tipo').value = 'capital_giro';
+    document.getElementById('emp-inst').value = 'bb';
+    document.getElementById('emp-inicio').value = new Date().toISOString().split('T')[0];
+    document.getElementById('emp-parcelas').value = '';
+    document.getElementById('emp-vlr-parcela').value = '';
+    document.getElementById('emp-dia-debito').value = '';
+    document.getElementById('emp-taxa').value = '';
+    document.getElementById('emp-pagas').value = '0';
+    document.getElementById('emp-custo-total').value = '';
+    document.getElementById('emp-status').value = 'ativo';
+    document.getElementById('emp-preview').style.display = 'none';
+  }
+  calcularEmprestimo();
+  abrM('m-emprestimo');
+}
+
+function calcularEmprestimo() {
+  var parcelas   = parseInt(document.getElementById('emp-parcelas').value)||0;
+  var vlrParc    = parseFloat(document.getElementById('emp-vlr-parcela').value)||0;
+  var pagas      = parseInt(document.getElementById('emp-pagas').value)||0;
+  var taxa       = parseFloat(document.getElementById('emp-taxa').value)||0;
+  var custoTotal = parseFloat(document.getElementById('emp-custo-total').value)||0;
+  var inicio     = document.getElementById('emp-inicio').value;
+  var diaDebito  = parseInt(document.getElementById('emp-dia-debito').value)||1;
+
+  if (!parcelas || !vlrParc) { document.getElementById('emp-preview').style.display='none'; return; }
+
+  var totalFinanciado = vlrParc * parcelas;
+  var restantes       = parcelas - pagas;
+  var saldoDevedor    = vlrParc * restantes;
+  var custoEfetivo    = (vlrParc * parcelas - (totalFinanciado / (1 + taxa/100 * parcelas))) + custoTotal;
+
+  // Próximo débito
+  var hoje = new Date();
+  var proxDebito = new Date(hoje.getFullYear(), hoje.getMonth(), diaDebito);
+  if (proxDebito <= hoje) proxDebito = new Date(hoje.getFullYear(), hoje.getMonth()+1, diaDebito);
+  var proxDebitoStr = ('0'+proxDebito.getDate()).slice(-2)+'/'+('0'+(proxDebito.getMonth()+1)).slice(-2)+'/'+proxDebito.getFullYear();
+
+  // Término previsto
+  var fimDate = new Date(inicio+'T12:00:00');
+  fimDate.setMonth(fimDate.getMonth() + parcelas);
+  var fimStr = ('0'+fimDate.getDate()).slice(-2)+'/'+('0'+(fimDate.getMonth()+1)).slice(-2)+'/'+fimDate.getFullYear();
+
+  setText('emp-prev-total', R(totalFinanciado));
+  setText('emp-prev-saldo', R(saldoDevedor));
+  setText('emp-prev-rest',  restantes + ' de ' + parcelas);
+  setText('emp-prev-cet',   R(custoTotal + vlrParc * parcelas - totalFinanciado/(1+taxa/100*parcelas)));
+  setText('emp-prev-prox',  proxDebitoStr);
+  setText('emp-prev-fim',   fimStr);
+  document.getElementById('emp-preview').style.display = 'block';
+}
+
+function salvarEmprestimo() {
+  var nome    = document.getElementById('emp-nome').value.trim();
+  var parcelas = parseInt(document.getElementById('emp-parcelas').value)||0;
+  var vlrParc  = parseFloat(document.getElementById('emp-vlr-parcela').value)||0;
+  if (!nome || !parcelas || !vlrParc) { toast('Preencha nome, parcelas e valor.', false); return; }
+
+  var editId = document.getElementById('emp-edit-id').value;
+  var emp = {
+    id:         editId || gerarId(),
+    nome:       nome,
+    tipo:       document.getElementById('emp-tipo').value,
+    inst:       document.getElementById('emp-inst').value,
+    inicio:     document.getElementById('emp-inicio').value,
+    parcelas:   parcelas,
+    vlrParcela: vlrParc,
+    diaDebito:  parseInt(document.getElementById('emp-dia-debito').value)||1,
+    taxa:       parseFloat(document.getElementById('emp-taxa').value)||0,
+    pagas:      parseInt(document.getElementById('emp-pagas').value)||0,
+    custosDesc: document.getElementById('emp-custos-desc').value.trim(),
+    custoTotal: parseFloat(document.getElementById('emp-custo-total').value)||0,
+    status:     document.getElementById('emp-status').value,
+  };
+
+  if (editId) {
+    var idx = EMPRESTIMOS.findIndex(function(e){ return e.id===editId; });
+    if (idx > -1) EMPRESTIMOS[idx] = emp; else EMPRESTIMOS.push(emp);
+  } else {
+    EMPRESTIMOS.push(emp);
+  }
+  salvarEmprestimoSb(emp);
+  renderIndicadoresCompleto();
+  fechM('m-emprestimo');
+  toast('Contrato salvo!', true);
+}
+
+function excluirEmprestimo(id) {
+  if (!confirm('Excluir este contrato?')) return;
+  EMPRESTIMOS = EMPRESTIMOS.filter(function(e){ return e.id!==id; });
+  excluirEmprestimoSb(id);
+  renderIndicadoresCompleto();
+  toast('Contrato excluído.', true);
+}
+
+// ── RENDERIZAÇÃO COMPLETA DOS INDICADORES ──
+function renderIndicadoresCompleto() {
+  // Pegar valores já calculados do DRE
+  var rec    = NUM('i-rec')    || 0;
+  var cmv    = NUM('i-cmv')    || 0;
+  var lb     = NUM('i-lb')     || 0;
+  var desp   = NUM('i-dt')     || 0;
+  var ll     = NUM('i-ll')     || 0;
+  var df     = somarCat('financeiro'); // despesas financeiras (juros)
+
+  var depre  = DADOS_COMP.depre  || 0;
+  var amort  = DADOS_COMP.amort  || 0;
+  var pl     = DADOS_COMP.pl     || 0;
+  var ativo  = DADOS_COMP.ativo  || 0;
+  var est    = DADOS_COMP.estoque|| 0;
+  var ar     = DADOS_COMP.ar     || 0;
+  var ap     = DADOS_COMP.ap     || 0;
+  var pmr    = DADOS_COMP.pmr    || 30;
+  var pmp    = DADOS_COMP.pmp    || 28;
+  var pme    = DADOS_COMP.pme    || 45;
+
+  // ─── EBITDA ───
+  // EBITDA = EBIT + Depreciação + Amortização
+  // EBIT   = Lucro operacional (antes de juros e IR)
+  var ebit   = lb - (desp - df);           // Lucro bruto − despesas operacionais (sem financeiro)
+  var ebitda = ebit + depre + amort;
+  var ebitdaPct = rec > 0 ? ebitda/rec*100 : 0;
+
+  setText('i-ebitda',     R(ebitda));
+  setText('i-ebitda-pct', pct(ebitdaPct));
+
+  // ─── ROCE ───
+  // Capital empregado = Ativo total − Passivo circulante
+  var passivoCir  = ap + totalParcelasMes();
+  var capEmp      = ativo > 0 ? ativo - passivoCir : (pl + totalDividaAtiva());
+  var roce        = capEmp > 0 ? ebit / capEmp * 100 : 0;
+  setText('i-roce',    pct(roce));
+  setText('i-cap-emp', R(capEmp));
+
+  // ─── CAPITAL DE GIRO ───
+  var ativoCir  = ar + est + 0; // caixa não temos aqui diretamente
+  var capGiro   = ativoCir - passivoCir;
+  var liqCorr   = passivoCir > 0 ? ativoCir / passivoCir : 0;
+  var ciclo     = pme + pmr - pmp;
+  setText('i-cg',    R(capGiro));
+  setText('i-lc',    liqCorr.toFixed(2)+'x');
+  setText('i-ar',    R(ar));
+  setText('i-est',   R(est));
+  setText('i-ap',    R(ap));
+  setText('i-ciclo', ciclo+' dias');
+
+  // ─── ENDIVIDAMENTO ───
+  var divTotal  = totalDividaAtiva();
+  var indEnd    = ativo > 0 ? divTotal/ativo*100 : (pl > 0 ? divTotal/(pl+divTotal)*100 : 0);
+  var divEbitda = ebitda > 0 ? divTotal/(ebitda*12) : 0; // ebitda anualizado
+  var cobJur    = df > 0 ? ebit/df : 0;
+  var parcMes   = totalParcelasMes();
+  setText('i-div-total',  R(divTotal));
+  setText('i-end',        pct(indEnd));
+  setText('i-div-ebitda', divEbitda.toFixed(2)+'x');
+  setText('i-cob-jur',    cobJur.toFixed(2)+'x');
+  setText('i-parc-mes',   R(parcMes));
+  setText('i-pl',         R(pl));
+
+  // ─── SAÚDE FINANCEIRA ───
+  calcularSaudeFinanceira(ebitdaPct, indEnd, cobJur, liqCorr, roce, capGiro);
+
+  // ─── EMPRÉSTIMOS ───
+  renderEmprestimos(divTotal, parcMes);
+}
+
+function somarCat(cat) {
+  return LANCAMENTOS.filter(function(l){
+    return l.cat===cat && l.tipo==='despesa' && !l.excluido && l.data.startsWith(mesSel);
+  }).reduce(function(s,l){ return s+l.valor; }, 0);
+}
+
+function totalDividaAtiva() {
+  return EMPRESTIMOS.filter(function(e){ return e.status==='ativo'; })
+    .reduce(function(s,e){ return s + e.vlrParcela*(e.parcelas-e.pagas); }, 0);
+}
+
+function totalParcelasMes() {
+  return EMPRESTIMOS.filter(function(e){ return e.status==='ativo' && e.pagas < e.parcelas; })
+    .reduce(function(s,e){ return s + e.vlrParcela; }, 0);
+}
+
+function NUM(id) {
+  var el = document.getElementById(id);
+  if (!el) return 0;
+  var txt = el.textContent.replace(/[R$\s.]/g,'').replace(',','.');
+  return parseFloat(txt)||0;
+}
+
+function pct(v) { return (isNaN(v)?0:v).toFixed(1)+'%'; }
+
+// ─── SCORE DE SAÚDE FINANCEIRA ───
+function calcularSaudeFinanceira(ebitdaPct, indEnd, cobJur, liqCorr, roce, capGiro) {
+  var criterios = [
+    { label:'Margem EBITDA', val:ebitdaPct, bom:15, ok:8, unidade:'%', desc:'Acima de 15%: excelente · 8-15%: ok · <8%: atenção' },
+    { label:'Endividamento',  val:indEnd,   bom:40, ok:60, unidade:'%', inverso:true, desc:'Abaixo de 40%: saudável · 40-60%: atenção · >60%: risco' },
+    { label:'Cobertura juros',val:cobJur,   bom:3,  ok:1.5, unidade:'x', desc:'Acima de 3x: ótimo · 1.5-3x: ok · <1.5x: risco' },
+    { label:'Liquidez corrente',val:liqCorr,bom:2,  ok:1.2, unidade:'x', desc:'Acima de 2x: ótimo · 1.2-2x: ok · <1.2x: atenção' },
+    { label:'ROCE',           val:roce,     bom:15, ok:8,   unidade:'%', desc:'Acima de 15%: excelente · 8-15%: bom · <8%: baixo' },
+    { label:'Capital de giro',val:capGiro,  bom:1, ok:0, unidade:'R$', positivo:true, desc:'Positivo: saudável · Negativo: risco de liquidez' },
+  ];
+
+  var score = 0;
+  var itensHTML = criterios.map(function(c){
+    var pontos, cor, icone, label;
+    if (c.positivo) {
+      pontos = c.val > 0 ? 100 : (c.val > -50000 ? 50 : 0);
+      cor = c.val > 0 ? 'var(--gr)' : (c.val > -50000 ? 'var(--am)' : 'var(--rd)');
+      icone = c.val > 0 ? 'circle-check' : (c.val > -50000 ? 'alert-circle' : 'circle-x');
+      label = c.val > 0 ? 'Positivo' : 'Negativo';
+    } else if (c.inverso) {
+      pontos = c.val <= c.bom ? 100 : (c.val <= c.ok ? 60 : 20);
+      cor = c.val <= c.bom ? 'var(--gr)' : (c.val <= c.ok ? 'var(--am)' : 'var(--rd)');
+      icone = c.val <= c.bom ? 'circle-check' : (c.val <= c.ok ? 'alert-circle' : 'circle-x');
+      label = c.val <= c.bom ? 'Saudável' : (c.val <= c.ok ? 'Atenção' : 'Risco');
+    } else {
+      pontos = c.val >= c.bom ? 100 : (c.val >= c.ok ? 60 : 20);
+      cor = c.val >= c.bom ? 'var(--gr)' : (c.val >= c.ok ? 'var(--am)' : 'var(--rd)');
+      icone = c.val >= c.bom ? 'circle-check' : (c.val >= c.ok ? 'alert-circle' : 'circle-x');
+      label = c.val >= c.bom ? 'Ótimo' : (c.val >= c.ok ? 'Atenção' : 'Risco');
+    }
+    score += pontos;
+    var valExib = c.unidade==='R$' ? R(c.val) : c.val.toFixed(c.unidade==='x'?2:1)+c.unidade;
+    return '<div class="ind-card" style="border-left:3px solid '+cor+'">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+        '<div class="ind-label">'+c.label+'</div>'+
+        '<i class="ti ti-'+icone+'" style="color:'+cor+';font-size:16px"></i>'+
+      '</div>'+
+      '<div style="font-size:16px;font-weight:700;color:'+cor+';margin:4px 0">'+valExib+'</div>'+
+      '<div style="font-size:10px;color:'+cor+';font-weight:600">'+label+'</div>'+
+      '<div class="ind-formula" title="'+c.desc+'">'+c.desc.split('·')[0].trim()+'</div>'+
+    '</div>';
+  }).join('');
+
+  var scoreTotal = Math.round(score / criterios.length);
+  var scoreCor   = scoreTotal >= 80 ? 'var(--gr)' : scoreTotal >= 55 ? 'var(--am)' : 'var(--rd)';
+  var scoreLabel = scoreTotal >= 80 ? '😊 Saudável' : scoreTotal >= 55 ? '😐 Atenção' : '😟 Risco';
+
+  var badge = document.getElementById('saude-score-badge');
+  if (badge) { badge.textContent = scoreLabel; badge.style.color = scoreCor; }
+
+  var bar = document.getElementById('saude-bar');
+  if (bar) { bar.style.width = scoreTotal+'%'; bar.style.background = scoreCor; }
+  setText('saude-score-txt', scoreTotal+' / 100');
+
+  var el = document.getElementById('saude-itens');
+  if (el) el.innerHTML = itensHTML;
+}
+
+// ─── RENDERIZAR EMPRÉSTIMOS ───
+var INST_LABELS = { bb:'Banco do Brasil', sicredi:'Sicredi', bradesco:'Bradesco', itau:'Itaú', caixa:'Caixa', bndes:'BNDES', outro:'Outro' };
+var TIPO_LABELS = { capital_giro:'Capital de Giro', pronampe:'PRONAMPE', financiamento:'Financiamento', antecipacao:'Antecipação', conta_garantida:'Conta Garantida', credito_rural:'Crédito Rural', outros:'Outros' };
+
+function renderEmprestimos(divTotal, parcMes) {
+  var ativos = EMPRESTIMOS.filter(function(e){ return e.status==='ativo'; });
+  var wrap   = document.getElementById('emprestimos-tabela-wrap');
+  var vazio  = document.getElementById('emprestimos-vazio');
+  var res    = document.getElementById('emprestimos-resumo');
+
+  // Cards resumo
+  if (res) {
+    res.innerHTML = ativos.length
+      ? '<div class="card"><div class="card-bar cb-rd"></div><div class="card-top"><i class="ti ti-file-invoice"></i>Contratos ativos</div><div class="card-val vrd">'+ativos.length+'</div><div class="card-sub">Empréstimos em aberto</div></div>'+
+        '<div class="card"><div class="card-bar cb-am"></div><div class="card-top"><i class="ti ti-calendar-due"></i>Parcelas/mês</div><div class="card-val vam">'+R(parcMes)+'</div><div class="card-sub">Débito mensal total</div></div>'+
+        '<div class="card"><div class="card-bar cb-rd"></div><div class="card-top"><i class="ti ti-trending-down"></i>Saldo devedor</div><div class="card-val vrd">'+R(divTotal)+'</div><div class="card-sub">Total a pagar</div></div>'+
+        '<div class="card"><div class="card-bar cb-pu"></div><div class="card-top"><i class="ti ti-percentage"></i>Taxa média</div><div class="card-val vpu">'+( ativos.length ? (ativos.reduce(function(s,e){ return s+e.taxa; },0)/ativos.length).toFixed(2)+'% a.m.' : '—' )+'</div><div class="card-sub">Ponderada por contrato</div></div>'
+      : '';
+  }
+
+  if (!EMPRESTIMOS.length) {
+    if (wrap)  wrap.style.display  = 'none';
+    if (vazio) vazio.style.display = 'block';
+    return;
+  }
+  if (wrap)  wrap.style.display  = 'block';
+  if (vazio) vazio.style.display = 'none';
+
+  var tb = document.getElementById('tb-emprestimos');
+  if (!tb) return;
+
+  tb.innerHTML = EMPRESTIMOS.map(function(e){
+    var restantes   = e.parcelas - e.pagas;
+    var saldo       = e.vlrParcela * restantes;
+    var custoTotal  = e.custoTotal || 0;
+    var statusPill  = e.status==='ativo'
+      ? '<span class="pill p-gr">Ativo</span>'
+      : e.status==='quitado'
+        ? '<span class="pill p-mu">Quitado</span>'
+        : '<span class="pill p-am">Renegociado</span>';
+
+    return '<tr>'+
+      '<td style="font-size:12px"><div style="font-weight:600">'+e.nome+'</div><div style="color:var(--mu);font-size:10px">'+( TIPO_LABELS[e.tipo]||e.tipo )+'</div></td>'+
+      '<td style="font-size:12px">'+( INST_LABELS[e.inst]||e.inst )+'</td>'+
+      '<td style="font-size:12px;color:var(--mu)">'+fmtData(e.inicio)+'</td>'+
+      '<td style="text-align:center">'+
+        '<div style="font-size:12px;font-weight:600">'+restantes+'/'+e.parcelas+'</div>'+
+        '<div style="font-size:10px;color:var(--mu)">restantes</div>'+
+        '<div class="pb-wrap" style="margin-top:3px;height:3px"><div class="pb-fill" style="width:'+(e.pagas/e.parcelas*100).toFixed(0)+'%;background:var(--gr);height:3px"></div></div>'+
+      '</td>'+
+      '<td style="text-align:right;font-weight:600">'+R(e.vlrParcela)+'</td>'+
+      '<td style="text-align:center;font-size:12px">dia '+e.diaDebito+'</td>'+
+      '<td style="text-align:right;font-size:12px;color:var(--am)">'+e.taxa.toFixed(3)+'%</td>'+
+      '<td style="text-align:right;font-weight:600;color:var(--rd)">'+R(saldo)+'</td>'+
+      '<td style="text-align:right;font-size:12px">'+( custoTotal>0 ? R(custoTotal) : '—' )+( e.custosDesc ? '<br><span style="font-size:10px;color:var(--mu)">'+e.custosDesc.substring(0,30)+'</span>' : '' )+'</td>'+
+      '<td style="text-align:right;white-space:nowrap">'+
+        '<button class="btn btn-ghost btn-sm" onclick="abrirModalEmprestimo(\''+e.id+'\')" style="margin-right:4px"><i class="ti ti-edit"></i></button>'+
+        '<button class="btn btn-danger btn-sm" onclick="excluirEmprestimo(\''+e.id+'\')"><i class="ti ti-trash"></i></button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+// ════════════════════════════════════════════════
+// SINCRONIZAÇÃO SUPABASE — TODAS AS TABELAS
+// ════════════════════════════════════════════════
+
+// ── CONFIGURAÇÕES (contas, taxas, dados complementares) ──
+async function salvarConfig(chave, valor) {
+  ls(chave, valor); // sempre salva local
+  if (!sbOn || !sbClient) return;
+  try {
+    await sbClient.from('configuracoes').upsert({ chave: chave, valor: valor, updated_at: new Date().toISOString() });
+  } catch(e) { console.warn('Erro ao salvar config:', e.message); }
+}
+
+async function carregarConfig(chave, fallback) {
+  if (!sbOn || !sbClient) return ls(chave) || fallback;
+  try {
+    var r = await sbClient.from('configuracoes').select('valor').eq('chave', chave).single();
+    if (r.data) { ls(chave, r.data.valor); return r.data.valor; }
+  } catch(e) {}
+  return ls(chave) || fallback;
+}
+
+async function carregarTodasConfigs() {
+  if (!sbOn || !sbClient) return;
+  try {
+    var r = await sbClient.from('configuracoes').select('chave,valor');
+    if (r.data) {
+      r.data.forEach(function(cfg) {
+        ls(cfg.chave, cfg.valor);
+        if (cfg.chave === 'taxas_cartao')        TAXAS_CARTAO = cfg.valor;
+        if (cfg.chave === 'bandeira_conta')       BANDEIRA_CONTA = cfg.valor;
+        if (cfg.chave === 'contas_bancarias')     CONTAS = cfg.valor;
+        if (cfg.chave === 'prazo_credito')        Object.assign(PRAZO_CREDITO, cfg.valor);
+        if (cfg.chave === 'dados_complementares') Object.assign(DADOS_COMP, cfg.valor);
+        if (cfg.chave === 'fd_meta_'+mesSel)      { var el=document.getElementById('fd-meta-input'); if(el) el.value=cfg.valor; }
+      });
+    }
+  } catch(e) { console.warn('Erro ao carregar configs:', e.message); }
+}
+
+// ── FATURAMENTO DIÁRIO ──
+async function carregarFatDiarioSb() {
+  if (!sbOn || !sbClient) { FAT_DIARIO = ls('fat_diario_'+mesSel)||[]; renderFatDiario(); return; }
+  try {
+    var r = await sbClient.from('faturamento_diario').select('*')
+      .gte('data', mesSel+'-01').lte('data', mesSel+'-31').order('data');
+    if (!r.error) {
+      FAT_DIARIO = (r.data||[]).map(function(l){
+        return { id:l.id, data:l.data, valor:parseFloat(l.valor), obs:l.obs||'' };
+      });
+      ls('fat_diario_'+mesSel, FAT_DIARIO);
+    } else { FAT_DIARIO = ls('fat_diario_'+mesSel)||[]; }
+  } catch(e) { FAT_DIARIO = ls('fat_diario_'+mesSel)||[]; }
+  renderFatDiario();
+}
+
+async function salvarFatDiarioSb(item) {
+  if (!sbOn || !sbClient) return;
+  try {
+    var payload = { data:item.data, valor:item.valor, obs:item.obs||'' };
+    if (typeof item.id === 'number') {
+      await sbClient.from('faturamento_diario').update(payload).eq('id', item.id);
+    } else {
+      var r = await sbClient.from('faturamento_diario').insert(payload).select();
+      if (r.data && r.data[0]) item.id = r.data[0].id;
+    }
+    ls('fat_diario_'+mesSel, FAT_DIARIO);
+  } catch(e) { console.warn('Erro salvar fat diario:', e.message); }
+}
+
+async function excluirFatDiarioSb(id) {
+  if (!sbOn || !sbClient || typeof id !== 'number') return;
+  try { await sbClient.from('faturamento_diario').delete().eq('id', id); } catch(e) {}
+}
+
+// ── FORNECEDORES ──
+async function carregarFornecedoresSb() {
+  if (!sbOn || !sbClient) { FORNECEDORES = ls('fornecedores')||[]; renderFornecedores(); return; }
+  try {
+    var r = await sbClient.from('pagamentos_fornecedores').select('*').order('vencimento');
+    if (!r.error) {
+      FORNECEDORES = (r.data||[]).map(function(l){
+        return { id:l.id, nome:l.nome, valor:parseFloat(l.valor), vencimento:l.vencimento,
+          cat:l.categoria||'outros', status:l.status||'aberto', pgto_data:l.pgto_data||'', obs:l.obs||'' };
+      });
+      ls('fornecedores', FORNECEDORES);
+    } else { FORNECEDORES = ls('fornecedores')||[]; }
+  } catch(e) { FORNECEDORES = ls('fornecedores')||[]; }
+  renderFornecedores();
+}
+
+async function salvarFornecedorSb(item) {
+  if (!sbOn || !sbClient) return;
+  try {
+    var payload = { nome:item.nome, valor:item.valor, vencimento:item.vencimento,
+      categoria:item.cat, status:item.status, pgto_data:item.pgto_data||null, obs:item.obs||'' };
+    if (typeof item.id === 'number') {
+      await sbClient.from('pagamentos_fornecedores').update(payload).eq('id', item.id);
+    } else {
+      var r = await sbClient.from('pagamentos_fornecedores').insert(payload).select();
+      if (r.data && r.data[0]) item.id = r.data[0].id;
+    }
+    ls('fornecedores', FORNECEDORES);
+  } catch(e) { console.warn('Erro salvar fornecedor:', e.message); }
+}
+
+async function excluirFornecedorSb(id) {
+  if (!sbOn || !sbClient || typeof id !== 'number') return;
+  try { await sbClient.from('pagamentos_fornecedores').delete().eq('id', id); } catch(e) {}
+}
+
+// ── EMPRÉSTIMOS ──
+async function carregarEmprestimosSb() {
+  if (!sbOn || !sbClient) { EMPRESTIMOS = ls('emprestimos')||[]; return; }
+  try {
+    var r = await sbClient.from('emprestimos').select('*').order('created_at');
+    if (!r.error) {
+      EMPRESTIMOS = (r.data||[]).map(function(e){
+        return { id:e.id, nome:e.nome, tipo:e.tipo, inst:e.inst, inicio:e.inicio,
+          parcelas:e.parcelas, vlrParcela:parseFloat(e.vlr_parcela),
+          diaDebito:e.dia_debito, taxa:parseFloat(e.taxa), pagas:e.pagas,
+          custosDesc:e.custos_desc||'', custoTotal:parseFloat(e.custo_total)||0, status:e.status };
+      });
+      ls('emprestimos', EMPRESTIMOS);
+    } else { EMPRESTIMOS = ls('emprestimos')||[]; }
+  } catch(e) { EMPRESTIMOS = ls('emprestimos')||[]; }
+}
+
+async function salvarEmprestimoSb(emp) {
+  if (!sbOn || !sbClient) return;
+  try {
+    var payload = { id:emp.id, nome:emp.nome, tipo:emp.tipo, inst:emp.inst, inicio:emp.inicio,
+      parcelas:emp.parcelas, vlr_parcela:emp.vlrParcela, dia_debito:emp.diaDebito,
+      taxa:emp.taxa, pagas:emp.pagas, custos_desc:emp.custosDesc||'',
+      custo_total:emp.custoTotal||0, status:emp.status };
+    await sbClient.from('emprestimos').upsert(payload);
+    ls('emprestimos', EMPRESTIMOS);
+  } catch(e) { console.warn('Erro salvar emprestimo:', e.message); }
+}
+
+async function excluirEmprestimoSb(id) {
+  if (!sbOn || !sbClient) return;
+  try { await sbClient.from('emprestimos').delete().eq('id', id); } catch(e) {}
+}
+
+// ── VENDAS CARTÃO ──
+async function salvarVendaCartaoSb(venda) {
+  if (!sbOn || !sbClient) return;
+  try {
+    var payload = { id:venda.id, data:venda.data, bandeira:venda.bandeira,
+      modalidade:venda.modalidade, parcelas:venda.parcelas, bruto:venda.bruto,
+      taxa:venda.taxa, liquido:venda.liquido, conta_id:venda.contaId,
+      data_credito:venda.dataCredito, obs:venda.obs||'', hora:venda.hora||'' };
+    await sbClient.from('vendas_cartao').upsert(payload);
+  } catch(e) { console.warn('Erro salvar venda cartao:', e.message); }
+}
+
+// ── REALTIME PARA NOVAS TABELAS ──
+function iniciarRealtimeCompleto() {
+  if (!sbOn || !sbClient) return;
+  var tabelas = ['faturamento_diario','pagamentos_fornecedores','emprestimos','configuracoes','vendas_cartao'];
+  tabelas.forEach(function(tabela) {
+    sbClient.channel('changes-'+tabela)
+      .on('postgres_changes', { event:'*', schema:'public', table:tabela }, function() {
+        var dot = document.getElementById('sb-dot');
+        if (dot) { dot.style.background='var(--am)'; setTimeout(function(){ dot.style.background='var(--gr)'; },1200); }
+        // Recarregar dados relevantes
+        if (tabela==='faturamento_diario')    carregarFatDiarioSb();
+        if (tabela==='pagamentos_fornecedores') carregarFornecedoresSb();
+        if (tabela==='emprestimos')           { carregarEmprestimosSb().then(function(){ renderIndicadoresCompleto(); }); }
+        if (tabela==='configuracoes')         carregarTodasConfigs();
+      })
+      .subscribe();
+  });
 }
 
 verificarSessao();
